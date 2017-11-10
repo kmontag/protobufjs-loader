@@ -1,8 +1,16 @@
 language: node_js
-sudo: false
+cache:
+  directories:
+    - ~/.npm
+notifications:
+  email: false
 node_js:
-  - "8.9"
-install:
-  - npm install
-script:
-  - npm test
+  - '9'
+  - '8'
+  - '6'
+  - '4'
+after_success:
+  - npm run semantic-release
+branches:
+  except:
+    - /^v\d+\.\d+\.\d+$/

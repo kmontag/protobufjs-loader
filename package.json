@@ -1,10 +1,11 @@
 {
   "name": "protobufjs-loader",
-  "version": "0.1.0",
-  "description": "Webpack loader to translate protobuf definitions to ProtoBuf.js modules",
+  "version": "0.0.0-development",
+  "description": "Webpack loader to translate .proto definitions to ProtoBuf.js modules",
   "main": "index.js",
   "scripts": {
-    "test": "mocha test/*.test.js"
+    "test": "mocha test/*.test.js",
+    "semantic-release": "semantic-release pre && npm publish && semantic-release post"
   },
   "keywords": [
     "webpack",
@@ -32,6 +33,11 @@
     "schema-utils": "^0.4.2",
     "tmp": "0.0.31",
     "uglify-loader": "^2.0.0",
-    "webpack": "^3.8.1"
+    "webpack": "^3.8.1",
+    "semantic-release": "^8.2.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kmontag/protobufjs-loader.git"
   }
 }
