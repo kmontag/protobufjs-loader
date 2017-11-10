@@ -6,7 +6,8 @@ const webpack = require('webpack');
 
 const fixturePath = path.resolve(__dirname, '..', 'fixtures');
 
-module.exports = function (fixture, loaderOpts, webpackOpts = {}) {
+module.exports = function (fixture, loaderOpts, webpackOpts) {
+  webpackOpts = (webpackOpts || {});
   return new Promise(function(resolve, reject) {
     let inspect;
     const compiler = webpack(Object.assign({
