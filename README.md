@@ -59,11 +59,10 @@ module.exports = {
 
 /* replaces e.g.:
  * 
- *   const protobuf = require('protobufjs');
+ *   const protobuf = require('protobufjs/light');
  *   const jsonDescriptor = require('json!my/compiled/protobuf.js');
  *   const Root = protobuf.Root.fromJSON(jsonDescriptor);
- * 
  */
-const Root require('my/protobuf.proto');
+const Root = require('my/protobuf.proto');
 
 ```
