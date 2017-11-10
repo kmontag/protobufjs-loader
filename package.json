@@ -1,7 +1,7 @@
 {
   "name": "protobufjs-loader",
   "version": "0.1.0",
-  "description": "Webpack loader to import .proto definitions as ProtoBuf.js roots",
+  "description": "Webpack loader to translate .proto definitions to ProtoBuf.js modules",
   "main": "index.js",
   "scripts": {
     "test": "mocha test/*.test.js"
@@ -13,7 +13,7 @@
     "ProtoBuf.js"
   ],
   "author": "Kevin Montag <kmontag@cs.stanford.edu>",
-  "license": "ISC",
+  "license": "MIT",
   "dependencies": {
     "protobufjs": "^6.8.0",
     "tmp-promise": "^1.0.4"
