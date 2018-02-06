@@ -35,18 +35,21 @@ module.exports = {
                  * default: false
                  */
                 json: true,
-                
+
                 /* import paths provided to pbjs.
                  * default: webpack import paths (i.e. config.resolve.modules)
                  */
                 paths: ['/path/to/definitions'],
-                
+
                 /* additional command line arguments passed to
                  * pbjs, see https://github.com/dcodeIO/ProtoBuf.js/#pbjs-for-javascript
                  * for a list of what's available.
                  * default: []
                  */
-                pbjsArgs: ['--no-encode']
+                pbjsArgs: ['--no-encode'],
+
+                /* Enable Typescript declaration file generation via pbts. */
+                pbts: false
               }
             }
         }]
@@ -58,7 +61,7 @@ module.exports = {
 // myModule.js
 
 /* replaces e.g.:
- * 
+ *
  *   const protobuf = require('protobufjs/light');
  *   const jsonDescriptor = require('json!my/compiled/protobuf.js');
  *   const Root = protobuf.Root.fromJSON(jsonDescriptor);
