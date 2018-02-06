@@ -2,7 +2,9 @@
 
 const fs = require('fs');
 const path = require('path');
-const pbjs = require('protobufjs/cli').pbjs;
+const pbjsCLI = require('protobufjs/cli');
+const pbjs = pbjsCLI.pbjs;
+const pbts = pbjsCLI.pbts;
 const protobuf = require('protobufjs');
 const tmp = require('tmp-promise');
 
@@ -23,6 +25,9 @@ const schema = {
     },
     pbjsArgs: {
       type: 'array',
+    },
+    pbts: {
+      type: 'boolean'
     }
   },
   additionalProperties: false,
@@ -40,6 +45,8 @@ module.exports = function(source) {
     paths: this.options.resolve.modules || [],
 
     pbjsArgs: [],
+
+    pbts: false,
   }, getOptions(this));
   validateOptions(schema, options, 'protobufjs-loader');
 
@@ -114,8 +121,33 @@ module.exports = function(source) {
       loadDependencies.catch(function(depErr) {
         callback(depErr);
       }).then(function() {
-        callback(err, result);
+        if(!options.pbts || err) {
+          callback(err, result);
+        } else {
+          execPBTS(self.resourcePath, result, callback);
+        }
       });
     });
   });
 };
+
+function execPBTS(resourcePath, compiledContent, callback) {
+  // pbts CLI only supports streaming from stdin without a lot of duplicated logic, so we need to use a tmp file. :(
+  tmp.file({postfix: ".js"}).then(function(o) {
+    return new Promise(function(resolve, reject) {
+      fs.write(o.fd, compiledContent, function(err, bytesWritten, buffer) {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(o.path);
+        }
+      });
+    });
+  }).then(function(compiledFilename) {
+    let declarationFilename = resourcePath + ".d.ts";
+    let pbtsArgs = ["-o", declarationFilename, compiledFilename];
+    pbts.main(pbtsArgs, function(err, declarationContent) {
+      callback(err, compiledContent);
+    });
+  });
+}
