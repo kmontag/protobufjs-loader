@@ -3,14 +3,16 @@
 const MemoryFS = require('memory-fs');
 const path = require('path');
 const webpack = require('webpack');
+const semver = require('semver');
 
 const fixturePath = path.resolve(__dirname, '..', 'fixtures');
+console.log(webpack.version);
 
 module.exports = function (fixture, loaderOpts, webpackOpts) {
   webpackOpts = (webpackOpts || {});
   return new Promise(function(resolve, reject) {
     let inspect;
-    const compiler = webpack(Object.assign({
+    const webpackOptions = Object.assign({
       entry: path.resolve(fixturePath, `${fixture}.proto`),
       output: {
         path: '/',
@@ -37,7 +39,12 @@ module.exports = function (fixture, loaderOpts, webpackOpts) {
           }]
         }],
       }
-    }, webpackOpts));
+    }, webpackOpts);
+
+    if (webpack.version && semver.gt(webpack.version, '4.0.0')) {
+      webpackOptions.mode = 'production';
+    }
+    const compiler = webpack(webpackOptions);
 
     let fs = new MemoryFS();
     compiler.outputFileSystem = fs;

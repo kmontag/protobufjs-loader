@@ -35,10 +35,10 @@
     "tmp": "0.0.31",
     "uglify-js": "^2.8.29",
     "uglify-loader": "^2.0.0",
-    "webpack": "^3.8.1"
+    "webpack": "^4.0.0"
   },
   "peerDependencies": {
-    "webpack": "^2.0.0 || ^3.0.0"
+    "webpack": "^2.0.0 || ^3.0.0 || ^4.0.0"
   },
   "repository": {
     "type": "git",
