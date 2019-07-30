@@ -3,11 +3,14 @@
 const assert = require('chai').assert;
 const path = require('path');
 const protobuf = require('protobufjs');
+const protobufCli = require('protobufjs/cli/util');
+
+protobufCli.setup();
 
 const compile = require('./helpers/compile');
 
-
 describe('with JSON / reflection', function() {
+  this.timeout(10000);
   beforeEach(function() {
     this.opts = {
       json: true,
@@ -24,6 +27,7 @@ describe('with JSON / reflection', function() {
 });
 
 describe('with static code', function() {
+  this.timeout(10000);
   it('should compile static code by default', function(done) {
     compile('basic').then(function(inspect) {
       let contents = inspect.arguments[0];
@@ -42,6 +46,7 @@ describe('with static code', function() {
 });
 
 describe('with command line options', function() {
+  this.timeout(10000);
   it('should pass command line options to the pbjs call', function(done) {
     compile('basic', {pbjsArgs: ['--no-encode']}).then(function(inspect) {
       let contents = inspect.arguments[0];
@@ -56,6 +61,7 @@ describe('with command line options', function() {
 });
 
 describe('with imports', function() {
+  this.timeout(10000);
   beforeEach(function() {
     this.innerString = 'addJSON({foo:{nested:{NotBar:{fields:{bar:{type:"Bar",id:1}}},Bar:{fields:{baz:{type:"string",id:1}}}}}})})';
   });
