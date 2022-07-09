@@ -21,6 +21,9 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node-version }}
-      - run: npm ci
+      # We're ignoring `package-lock.json` since this is an NPM
+      # package, meaning `npm ci` (the usual installation command)
+      # isn't appropriate here.
+      - run: npm install
       - run: npm run build --if-present
       - run: npm test
