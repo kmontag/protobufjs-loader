@@ -4,8 +4,7 @@
   "description": "Webpack loader to translate .proto definitions to ProtoBuf.js modules",
   "main": "index.js",
   "scripts": {
-    "test": "mocha test/*.test.js",
-    "semantic-release": "semantic-release pre && npm publish && semantic-release post"
+    "test": "mocha test/*.test.js"
   },
   "keywords": [
     "webpack",
