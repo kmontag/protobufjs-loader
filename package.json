@@ -21,10 +21,10 @@
     "tmp-promise": "^1.0.4"
   },
   "devDependencies": {
-    "chai": "^4.1.2",
+    "chai": "^4.3.6",
     "inspect-loader": "^1.0.0",
     "memory-fs": "^0.4.1",
-    "mocha": "^4.0.1",
+    "mocha": "^10.0.0",
     "semantic-release": "^19.0.3",
     "uglify-loader": "^2.0.0",
     "webpack": "^3.8.1"
