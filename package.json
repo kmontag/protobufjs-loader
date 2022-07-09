@@ -15,16 +15,16 @@
   "author": "Kevin Montag <kmontag@cs.stanford.edu>",
   "license": "MIT",
   "dependencies": {
+    "loader-utils": "^1.1.0",
     "protobufjs": "^6.8.0",
+    "schema-utils": "^0.4.2",
     "tmp-promise": "^1.0.4"
   },
   "devDependencies": {
     "chai": "^4.1.2",
     "inspect-loader": "^1.0.0",
-    "loader-utils": "^1.1.0",
     "memory-fs": "^0.4.1",
     "mocha": "^4.0.1",
-    "schema-utils": "^0.4.2",
     "semantic-release": "^19.0.3",
     "uglify-loader": "^2.0.0",
     "webpack": "^3.8.1"
