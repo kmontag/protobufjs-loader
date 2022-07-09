@@ -5,6 +5,16 @@ const path = require('path');
 
 const compile = require('./helpers/compile');
 
+before(function(done) {
+  // The first time the compiler gets run (e.g. in a CI environment),
+  // some additional packages will be installed in the
+  // background. This can take awhile and trigger a timeout, so we do
+  // it here explicitly first.
+  this.timeout(10000);
+  compile('basic').then(function(inspect) {
+    done();
+  });
+});
 
 describe('with JSON / reflection', function() {
   beforeEach(function() {
@@ -89,6 +99,17 @@ describe('with imports', function() {
   it('should add the imports as dependencies', function(done) {
     compile('import', {paths: [path.resolve(__dirname, 'fixtures')]}).then(function(inspect) {
       assert.include(inspect.context.getDependencies(), path.resolve(__dirname, 'fixtures', 'basic.proto'));
+      done();
+    });
+  });
+
+  it('should fail when the import is not found', function(done) {
+    compile('import', {
+      json: true,
+      // No include paths provided, so the 'import' fixture should
+      // fail to compile.
+    }).catch((err) => {
+      // Nothing to assert, we're just testing that the error happened.
       done();
     });
   });
