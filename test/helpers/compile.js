@@ -2,8 +2,21 @@
 
 const MemoryFS = require('memory-fs');
 const path = require('path');
-const webpack = require('webpack');
-const semver = require('semver');
+
+// Allow testing multiple webpack versions.
+const webpack = (() => {
+  switch (process.env.WEBPACK_VERSION) {
+    case '2':
+      return require('webpack2');
+      break;
+    case '3':
+      return require('webpack3');
+      break;
+    default:
+      return require('webpack');
+      break;
+  }
+})();
 
 const fixturePath = path.resolve(__dirname, '..', 'fixtures');
 console.log(webpack.version);
@@ -41,9 +54,6 @@ module.exports = function (fixture, loaderOpts, webpackOpts) {
       }
     }, webpackOpts);
 
-    if (webpack.version && semver.gt(webpack.version, '4.0.0')) {
-      webpackOptions.mode = 'production';
-    }
     const compiler = webpack(webpackOptions);
 
     let fs = new MemoryFS();
