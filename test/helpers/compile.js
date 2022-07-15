@@ -19,7 +19,6 @@ const webpack = (function() {
 })();
 
 const fixturePath = path.resolve(__dirname, '..', 'fixtures');
-console.log(webpack.version);
 
 // The config
 const isWebpack4Plus = ('version' in webpack);
