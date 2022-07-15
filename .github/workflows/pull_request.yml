@@ -32,4 +32,4 @@ jobs:
       # For node 18.x, the webpack hashing functions (which get called
       # separately from this loader during compilation) throw errors
       # unless we force the legacy SSL provider.
-      - run: ${{ matrix.node-version == '18.x' && 'NODE_OPTIONS=--openssl-legacy-provider' }} npm test
+      - run: ${{ matrix.node-version == '18.x' && 'NODE_OPTIONS=--openssl-legacy-provider ' || '' }}npm test
