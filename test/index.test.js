@@ -2,7 +2,6 @@
 
 const assert = require('chai').assert;
 const path = require('path');
-const protobuf = require('protobufjs');
 
 const compile = require('./helpers/compile');
 
@@ -70,7 +69,7 @@ describe('with imports', function() {
     this.innerString = 'addJSON({foo:{nested:{NotBar:{fields:{bar:{type:"Bar",id:1}}},Bar:{fields:{baz:{type:"string",id:1}}}}}})})';
   });
 
-  it('should respect the webpack paths configuration in webpack@2 and webpack@3', function(done) {
+  it('should respect the webpack paths configuration', function(done) {
     let innerString = this.innerString;
     compile('import', {
       json: true,
@@ -99,8 +98,7 @@ describe('with imports', function() {
 
   it('should add the imports as dependencies', function(done) {
     compile('import', {paths: [path.resolve(__dirname, 'fixtures')]}).then(function(inspect) {
-      const normalizedImportedPath = protobuf.util.path.normalize(path.resolve(__dirname, 'fixtures', 'basic.proto'));
-      assert.include(inspect.context.getDependencies(), normalizedImportedPath);
+      assert.include(inspect.context.getDependencies(), path.resolve(__dirname, 'fixtures', 'basic.proto'));
       done();
     });
   });
