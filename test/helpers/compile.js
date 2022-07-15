@@ -20,7 +20,8 @@ const webpack = (function() {
 
 const fixturePath = path.resolve(__dirname, '..', 'fixtures');
 
-// The config
+// The config object needs to look slightly different depending on the
+// version of webpack that we're testing with.
 const isWebpack4Plus = ('version' in webpack);
 
 module.exports = function (fixture, loaderOpts, webpackOpts) {
