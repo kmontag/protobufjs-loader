@@ -109,7 +109,6 @@ describe('with imports', function() {
       // No include paths provided, so the 'import' fixture should
       // fail to compile.
     }).catch((err) => {
-      console.log(err);
       // Nothing to assert, we're just testing that the error happened.
       done();
     });

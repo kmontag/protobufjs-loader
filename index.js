@@ -7,12 +7,9 @@ const pbjs = pbjsCLI.pbjs;
 const pbts = pbjsCLI.pbts;
 const protobuf = require('protobufjs');
 const tmp = require('tmp-promise');
-
-const getOptions = require('loader-utils').getOptions;
 const validateOptions = require('schema-utils');
 
-// const jsonModule = require('protobufjs/cli/targets/json-module');
-// const staticModule = require('protobufjs/cli/targets/static-module');
+const getOptions = require('loader-utils').getOptions;
 
 const schema = {
   type: 'object',
@@ -31,18 +28,25 @@ const schema = {
     }
   },
   additionalProperties: false,
-}
+};
 
 module.exports = function(source) {
   let callback = this.async();
   let self = this;
 
+  const paths = this.options ? // for webpack@2 and webpack@3
+    // property loaderContext.options has been
+    // deprecated in webpack@3 and removed in webpack@4
+    (this.options.resolve || {}).modules
+    // for webpack@4
+    // but property this._compiler deprecated in webpack@3 too
+    : (this._compiler.options.resolve || {}).modules;
+
   const options = Object.assign({
     json: false,
 
-    // Default to the paths given to the compiler (this.options is the
-    // webpack options object)
-    paths: this.options.resolve.modules || [],
+    // Default to the paths given to the compiler
+    paths: paths || [],
 
     pbjsArgs: [],
 

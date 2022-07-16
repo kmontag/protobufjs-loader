@@ -4,8 +4,7 @@
   "description": "Webpack loader to translate .proto definitions to ProtoBuf.js modules",
   "main": "index.js",
   "scripts": {
-    "test": "mocha test/*.test.js",
-    "semantic-release": "semantic-release pre && npm publish && semantic-release post"
+    "test": "mocha test/*.test.js"
   },
   "keywords": [
     "webpack",
@@ -16,7 +15,9 @@
   "author": "Kevin Montag <kmontag@cs.stanford.edu>",
   "license": "MIT",
   "dependencies": {
+    "loader-utils": "^1.1.0",
     "protobufjs": "^6.8.0",
+    "schema-utils": "^0.4.2",
     "tmp-promise": "^1.0.4"
   },
   "devDependencies": {
@@ -25,23 +26,21 @@
     "escodegen": "^1.9.0",
     "espree": "^3.5.1",
     "estraverse": "^4.2.0",
-    "glob": "^7.1.2",
     "inspect-loader": "^1.0.0",
     "jsdoc": "^3.5.5",
-    "loader-utils": "^1.1.0",
     "memory-fs": "^0.4.1",
-    "minimist": "^1.2.0",
     "mocha": "^4.0.1",
-    "schema-utils": "^0.4.2",
-    "semantic-release": "^8.2.0",
+    "semantic-release": "^17.0.0",
     "semver": "^5.4.1",
     "tmp": "0.0.31",
     "uglify-js": "^2.8.29",
     "uglify-loader": "^2.0.0",
-    "webpack": "^3.8.1"
+    "webpack2": "npm:webpack@^2.0.0",
+    "webpack3": "npm:webpack@^3.0.0",
+    "webpack": "^4.0.0"
   },
   "peerDependencies": {
-    "webpack": "^2.0.0 || ^3.0.0"
+    "webpack": "^2.0.0 || ^3.0.0 || ^4.0.0"
   },
   "repository": {
     "type": "git",

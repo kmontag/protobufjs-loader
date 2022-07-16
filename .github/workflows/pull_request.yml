@@ -1,0 +1,35 @@
+name: Test PR
+
+on:
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [10.x, 12.x, 16.x, 18.x]
+        webpack-version: [2, 3, 4]
+
+    env:
+      WEBPACK_VERSION: ${{ matrix.webpack-version }}
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+      # We're ignoring `package-lock.json` since this is an NPM
+      # package, meaning `npm ci` (the usual installation command)
+      # isn't appropriate here.
+      - run: npm install
+      - run: npm run build --if-present
+
+      # For node 18.x, the webpack hashing functions (which get called
+      # separately from this loader during compilation) throw errors
+      # unless we force the legacy SSL provider.
+      - run: ${{ matrix.node-version == '18.x' && 'NODE_OPTIONS=--openssl-legacy-provider ' || '' }}npm test

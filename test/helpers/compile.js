@@ -2,9 +2,27 @@
 
 const MemoryFS = require('memory-fs');
 const path = require('path');
-const webpack = require('webpack');
+
+// Allow testing multiple webpack versions.
+const webpack = (function() {
+  switch (process.env.WEBPACK_VERSION) {
+    case '2':
+      return require('webpack2');
+      break;
+    case '3':
+      return require('webpack3');
+      break;
+    default:
+      return require('webpack');
+      break;
+  }
+})();
 
 const fixturePath = path.resolve(__dirname, '..', 'fixtures');
+
+// The config object needs to look slightly different depending on the
+// version of webpack that we're testing with.
+const isWebpack4Plus = ('version' in webpack);
 
 module.exports = function (fixture, loaderOpts, webpackOpts) {
   webpackOpts = (webpackOpts || {});
@@ -37,7 +55,7 @@ module.exports = function (fixture, loaderOpts, webpackOpts) {
           }]
         }],
       }
-    }, webpackOpts));
+    }, isWebpack4Plus ? { mode: 'none' } : {}, webpackOpts));
 
     let fs = new MemoryFS();
     compiler.outputFileSystem = fs;
