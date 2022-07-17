@@ -49,11 +49,6 @@ module.exports = function (fixture, loaderOpts, webpackOpts) {
               }
             }
           }, {
-            loader: 'uglify-loader',
-            options: {
-              mangle: false,
-            },
-          }, {
             loader: path.resolve(__dirname, '..', '..', 'index.js'),
             options: loaderOpts,
           }]
