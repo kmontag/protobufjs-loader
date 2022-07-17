@@ -28,7 +28,7 @@
     "inspect-loader": "^1.0.0",
     "memory-fs": "^0.4.1",
     "mocha": "^4.0.1",
-    "semantic-release": "^17.0.0",
+    "semantic-release": "^19.0.3",
     "semver": "^5.4.1",
     "tmp": "0.0.31",
     "uglify-js": "^2.8.29",
