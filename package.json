@@ -29,7 +29,7 @@
     "memory-fs": "^0.4.1",
     "mocha": "^4.0.1",
     "semantic-release": "^19.0.3",
-    "semver": "^5.4.1",
+    "semver": "^7.1.2",
     "tmp": "0.0.31",
     "uglify-js": "^2.8.29",
     "uglify-loader": "^2.0.0",
