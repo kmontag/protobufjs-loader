@@ -12,6 +12,9 @@ const webpack = (function() {
     case '3':
       return require('webpack3');
       break;
+    case '4':
+      return require('webpack4');
+      break;
     default:
       return require('webpack');
       break;
@@ -23,6 +26,7 @@ const fixturePath = path.resolve(__dirname, '..', 'fixtures');
 // The config object needs to look slightly different depending on the
 // version of webpack that we're testing with.
 const isWebpack4Plus = ('version' in webpack);
+const isWebpack5 = isWebpack4Plus && webpack.version.substring(0, 2) === '5.';
 
 module.exports = function (fixture, loaderOpts, webpackOpts) {
   webpackOpts = (webpackOpts || {});
@@ -55,7 +59,16 @@ module.exports = function (fixture, loaderOpts, webpackOpts) {
           }]
         }],
       }
-    }, isWebpack4Plus ? { mode: 'none' } : {}, webpackOpts));
+    },
+    // webpack@4 adds the `mode` configuration option, which adds some
+    // additional config defaults that we want to avoid for
+    // consistency.
+    isWebpack4Plus ? { mode: 'none' } : {},
+    // Make sure to test webpack@5 without backwards-compatibility
+    // enabled. See
+    // https://webpack.js.org/configuration/experiments/#experimentsbackcompat.
+    isWebpack5 ? { experiments: { backCompat: false } } : {},
+    webpackOpts));
 
     let fs = new MemoryFS();
     compiler.outputFileSystem = fs;
