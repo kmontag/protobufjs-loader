@@ -44,7 +44,7 @@
     "@types/webpack4": "npm:@types/webpack@^4.0.0",
     "chai": "^4.1.2",
     "eslint": "^8.20.0",
-    "eslint-config-airbnb": "^19.0.4",
+    "eslint-config-airbnb-base": "^15.0.0",
     "eslint-config-prettier": "^8.5.0",
     "eslint-plugin-mocha": "^10.0.5",
     "glob": "^7.2.3",
