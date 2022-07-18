@@ -13,6 +13,10 @@
     "lint": "npm run lint:script && npm run lint:style",
     "test": "mocha test/*.test.js"
   },
+  "engines": {
+    "node": ">=12.0.0",
+    "npm": ">=7.0.0"
+  },
   "keywords": [
     "webpack",
     "protobuf",
@@ -52,7 +56,6 @@
     "jsdoc": "^3.6.10",
     "memory-fs": "^0.5.0",
     "mocha": "^8.4.0",
-    "npm": "^8.14.0",
     "prettier": "^2.7.1",
     "semantic-release": "^19.0.3",
     "semver": "^7.1.2",
