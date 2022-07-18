@@ -31,13 +31,6 @@ module.exports = {
             use: {
               loader: 'protobufjs-loader',
               options: {
-                /* Controls the "target" flag to pbjs - true for
-                 * json-module, false for static-module.
-                 *
-                 * default: false
-                 */
-                json: false,
-
                 /* Import paths provided to pbjs.
                  *
                  * default: webpack import paths (i.e. config.resolve.modules)
@@ -56,7 +49,11 @@ module.exports = {
                  * They'll be saved in the same directory as the protobuf file
                  * being processed, with a `.d.ts` extension.
                  *
-                 * This can be a config object or a boolean.
+                 * This only works if you're using the 'static-module' target
+                 * for pbjs (enabled by default).
+                 *
+                 * The value here can be a config object or a boolean; set it to
+                 * true to enable pbts with default configuration.
                  *
                  * default: false
                  */
@@ -65,6 +62,12 @@ module.exports = {
                    */
                   args: ['--no-comments'],
                 }
+
+                /* Set the "target" flag to pbjs.
+                 *
+                 * default: 'static-module'
+                 */
+                target: 'json-module',
               }
             }
         }]
