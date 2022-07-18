@@ -4,6 +4,7 @@
   "description": "Webpack loader to translate .proto definitions to ProtoBuf.js modules",
   "main": "index.js",
   "scripts": {
+    "check": "tsc",
     "lint": "prettier -c .",
     "test": "mocha test/*.test.js"
   },
