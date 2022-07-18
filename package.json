@@ -4,6 +4,7 @@
   "description": "Webpack loader to translate .proto definitions to ProtoBuf.js modules",
   "main": "index.js",
   "scripts": {
+    "lint": "prettier -c .",
     "test": "mocha test/*.test.js"
   },
   "keywords": [
@@ -32,6 +33,7 @@
     "memory-fs": "^0.4.1",
     "mocha": "^8.4.0",
     "npm": "^8.14.0",
+    "prettier": "^2.7.1",
     "semantic-release": "^19.0.3",
     "semver": "^7.1.2",
     "tmp": "^0.2.1",

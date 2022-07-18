@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 const assert = require('chai').assert;
 const path = require('path');
@@ -32,44 +32,45 @@ function minify(contents) {
   return result.code;
 }
 
-before(function(done) {
+before(function (done) {
   // The first time the compiler gets run (e.g. in a CI environment),
   // some additional packages will be installed in the
   // background. This can take awhile and trigger a timeout, so we do
   // it here explicitly first.
   this.timeout(10000);
-  compile('basic').then(function(inspect) {
+  compile('basic').then(function (inspect) {
     done();
   });
 });
 
-describe('with JSON / reflection', function() {
-  beforeEach(function() {
+describe('with JSON / reflection', function () {
+  beforeEach(function () {
     this.opts = {
       json: true,
     };
   });
-  it('should compile to a JSON representation', function(done) {
-    compile('basic', this.opts).then(function(inspect) {
+  it('should compile to a JSON representation', function (done) {
+    compile('basic', this.opts).then(function (inspect) {
       let contents = minify(inspect.arguments[0]);
-      let innerString = 'addJSON({foo:{nested:{Bar:{fields:{baz:{type:"string",id:1}}}}}})})';
+      let innerString =
+        'addJSON({foo:{nested:{Bar:{fields:{baz:{type:"string",id:1}}}}}})})';
       assert.include(contents, innerString);
       done();
     });
   });
 });
 
-describe('with static code', function() {
-  it('should compile static code by default', function(done) {
-    compile('basic').then(function(inspect) {
+describe('with static code', function () {
+  it('should compile static code by default', function (done) {
+    compile('basic').then(function (inspect) {
       let contents = minify(inspect.arguments[0]);
       assert.include(contents, 'foo.Bar=function(){');
       done();
     });
   });
 
-  it('should compile static code when the option is set explicitly', function(done) {
-    compile('basic', {json: false}).then(function(inspect) {
+  it('should compile static code when the option is set explicitly', function (done) {
+    compile('basic', { json: false }).then(function (inspect) {
       let contents = minify(inspect.arguments[0]);
       assert.include(contents, 'foo.Bar=function(){');
       done();
@@ -77,9 +78,9 @@ describe('with static code', function() {
   });
 });
 
-describe('with command line options', function() {
-  it('should pass command line options to the pbjs call', function(done) {
-    compile('basic', {pbjsArgs: ['--no-encode']}).then(function(inspect) {
+describe('with command line options', function () {
+  it('should pass command line options to the pbjs call', function (done) {
+    compile('basic', { pbjsArgs: ['--no-encode'] }).then(function (inspect) {
       let contents = minify(inspect.arguments[0]);
 
       // Sanity check
@@ -92,46 +93,56 @@ describe('with command line options', function() {
   });
 });
 
-describe('with imports', function() {
-  beforeEach(function() {
-    this.innerString = 'addJSON({foo:{nested:{NotBar:{fields:{bar:{type:"Bar",id:1}}},Bar:{fields:{baz:{type:"string",id:1}}}}}})})';
+describe('with imports', function () {
+  beforeEach(function () {
+    this.innerString =
+      'addJSON({foo:{nested:{NotBar:{fields:{bar:{type:"Bar",id:1}}},Bar:{fields:{baz:{type:"string",id:1}}}}}})})';
   });
 
-  it('should respect the webpack paths configuration', function(done) {
+  it('should respect the webpack paths configuration', function (done) {
     let innerString = this.innerString;
-    compile('import', {
-      json: true,
-    }, {
-      resolve: {
-        modules: ['node_modules', path.resolve(__dirname, 'fixtures')],
+    compile(
+      'import',
+      {
+        json: true,
+      },
+      {
+        resolve: {
+          modules: ['node_modules', path.resolve(__dirname, 'fixtures')],
+        },
       }
-    }).then(function(inspect) {
+    ).then(function (inspect) {
       let contents = minify(inspect.arguments[0]);
       assert.include(contents, innerString);
       done();
     });
   });
 
-  it('should respect an explicit paths configuration', function(done) {
+  it('should respect an explicit paths configuration', function (done) {
     let innerString = this.innerString;
     compile('import', {
       json: true,
       paths: [path.resolve(__dirname, 'fixtures')],
-    }).then(function(inspect) {
+    }).then(function (inspect) {
       let contents = minify(inspect.arguments[0]);
       assert.include(contents, innerString);
       done();
     });
   });
 
-  it('should add the imports as dependencies', function(done) {
-    compile('import', {paths: [path.resolve(__dirname, 'fixtures')]}).then(function(inspect) {
-      assert.include(inspect.context.getDependencies(), path.resolve(__dirname, 'fixtures', 'basic.proto'));
-      done();
-    });
+  it('should add the imports as dependencies', function (done) {
+    compile('import', { paths: [path.resolve(__dirname, 'fixtures')] }).then(
+      function (inspect) {
+        assert.include(
+          inspect.context.getDependencies(),
+          path.resolve(__dirname, 'fixtures', 'basic.proto')
+        );
+        done();
+      }
+    );
   });
 
-  it('should fail when the import is not found', function(done) {
+  it('should fail when the import is not found', function (done) {
     compile('import', {
       json: true,
       // No include paths provided, so the 'import' fixture should
