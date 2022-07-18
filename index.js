@@ -30,6 +30,12 @@ const schema = {
  * different possible structures for the `this` context in our loader
  * callback.
  *
+ * The `never` generic in the v5 context sets the return type of
+ * `getOptions`. Since we're using the deprecated `loader-utils`
+ * method of fetching options, this should be fine; however, if we
+ * drop support for older webpack versions, we'll want to define a
+ * stricter type for the options object.
+ *
  * @typedef { import('webpack').LoaderContext<never> | import('webpack4').loader.LoaderContext | import('webpack3').loader.LoaderContext | import('webpack2').loader.LoaderContext } LoaderContext
  */
 
@@ -55,6 +61,7 @@ module.exports = function (source) {
       ? (this._compiler.options.resolve || {}).modules
       : undefined;
 
+  /** @type {{ json: boolean, paths: string[], pbjsArgs: string[] }} */
   const options = Object.assign(
     {
       json: false,
@@ -68,6 +75,7 @@ module.exports = function (source) {
   );
   validateOptions(schema, options, { name: 'protobufjs-loader' });
 
+  /** @type { string } */
   let filename;
   tmp
     .file()
