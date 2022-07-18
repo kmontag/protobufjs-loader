@@ -1,5 +1,5 @@
 const fs = require('fs');
-const { pbjs, pbts } = require('protobufjs/cli');
+const { pbjs, pbts } = require('protobufjs-cli');
 const protobuf = require('protobufjs');
 const tmp = require('tmp-promise');
 const validateOptions = require('schema-utils').validate;
