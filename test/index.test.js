@@ -10,6 +10,8 @@ const compile = require('./helpers/compile');
  * Minifies the given JS string using ugilfy-js, so we can
  * consistently compare generated outputs using relatively compact
  * strings.
+ *
+ * @type { (contents: string) => string }
  */
 function minify(contents) {
   const result = UglifyJS.minify(contents, {
@@ -27,7 +29,7 @@ function minify(contents) {
     keep_fnames: true,
   });
   if (result.error) {
-    throw new Error(result.error);
+    throw result.error;
   }
   return result.code;
 }
@@ -38,7 +40,7 @@ before(function (done) {
   // background. This can take awhile and trigger a timeout, so we do
   // it here explicitly first.
   this.timeout(10000);
-  compile('basic').then(function (inspect) {
+  compile('basic').then(function (_inspect) {
     done();
   });
 });
@@ -73,6 +75,15 @@ describe('with static code', function () {
     compile('basic', { json: false }).then(function (inspect) {
       let contents = minify(inspect.arguments[0]);
       assert.include(contents, 'foo.Bar=function(){');
+      done();
+    });
+  });
+});
+
+describe('with an invalid protobuf file', function () {
+  it('should throw a compilation error', function (done) {
+    compile('invalid').catch(function (err) {
+      assert.equal(err, 'compilation error');
       done();
     });
   });
@@ -134,6 +145,11 @@ describe('with imports', function () {
     compile('import', { paths: [path.resolve(__dirname, 'fixtures')] }).then(
       function (inspect) {
         assert.include(
+          // This method is missing from the typings for older webpack
+          // versions, but it's supported in practice. If we drop
+          // support for v4 and below, we can remove this.
+          //
+          // @ts-ignore
           inspect.context.getDependencies(),
           path.resolve(__dirname, 'fixtures', 'basic.proto')
         );
@@ -147,7 +163,7 @@ describe('with imports', function () {
       json: true,
       // No include paths provided, so the 'import' fixture should
       // fail to compile.
-    }).catch((err) => {
+    }).catch((_err) => {
       // Nothing to assert, we're just testing that the error happened.
       done();
     });

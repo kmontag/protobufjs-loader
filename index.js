@@ -1,14 +1,14 @@
 'use strict';
 
 const fs = require('fs');
-const path = require('path');
 const pbjs = require('protobufjs/cli').pbjs;
 const protobuf = require('protobufjs');
 const tmp = require('tmp-promise');
-const validateOptions = require('schema-utils');
+const validateOptions = require('schema-utils').validate;
 
 const getOptions = require('loader-utils').getOptions;
 
+/** @type { Parameters<typeof validateOptions>[0] } */
 const schema = {
   type: 'object',
   properties: {
@@ -25,18 +25,43 @@ const schema = {
   additionalProperties: false,
 };
 
+/**
+ * We're supporting multiple webpack versions, so there are several
+ * different possible structures for the `this` context in our loader
+ * callback.
+ *
+ * The `never` generic in the v5 context sets the return type of
+ * `getOptions`. Since we're using the deprecated `loader-utils`
+ * method of fetching options, this should be fine; however, if we
+ * drop support for older webpack versions, we'll want to define a
+ * stricter type for the options object.
+ *
+ * @typedef { import('webpack').LoaderContext<never> | import('webpack4').loader.LoaderContext | import('webpack3').loader.LoaderContext | import('webpack2').loader.LoaderContext } LoaderContext
+ */
+
+/** @type { (this: LoaderContext, source: string) => any } */
 module.exports = function (source) {
-  let callback = this.async();
+  const callback = this.async();
   let self = this;
 
-  const paths = this.options
-    ? // For webpack@2 and webpack@3. property loaderContext.options
-      // was deprecated in webpack@3 and removed in webpack@4.
-      (this.options.resolve || {}).modules
-    : // For webpack@4 and webpack@5. The `_compiler` property is
-      // deprecated, but still works as of webpack@5.
-      (this._compiler.options.resolve || {}).modules;
+  // Explicitly check this case, as the typescript compiler thinks
+  // it's possible.
+  if (callback === undefined) {
+    throw new Error('Failed to request async execution from webpack');
+  }
 
+  const paths =
+    'options' in this
+      ? // For webpack@2 and webpack@3. property loaderContext.options
+        // was deprecated in webpack@3 and removed in webpack@4.
+        (this.options.resolve || {}).modules
+      : // For webpack@4 and webpack@5. The `_compiler` property is
+      // deprecated, but still works as of webpack@5.
+      this._compiler
+      ? (this._compiler.options.resolve || {}).modules
+      : undefined;
+
+  /** @type {{ json: boolean, paths: string[], pbjsArgs: string[] }} */
   const options = Object.assign(
     {
       json: false,
@@ -48,19 +73,20 @@ module.exports = function (source) {
     },
     getOptions(this)
   );
-  validateOptions(schema, options, 'protobufjs-loader');
+  validateOptions(schema, options, { name: 'protobufjs-loader' });
 
+  /** @type { string } */
   let filename;
   tmp
     .file()
     .then(function (o) {
       filename = o.path;
       return new Promise(function (resolve, reject) {
-        fs.write(o.fd, source, function (err, bytesWritten, buffer) {
+        fs.write(o.fd, source, function (err, bytesWritten, _buffer) {
           if (err) {
             reject(err);
           } else {
-            resolve(bytesWritten, buffer);
+            resolve(bytesWritten);
           }
         });
       });
@@ -104,6 +130,8 @@ module.exports = function (source) {
               return iresolved;
             }
           }
+
+          return null;
         };
         protobuf.load(filename, root, function (err, result) {
           if (err) {
