@@ -27,7 +27,7 @@ function minify(contents) {
     keep_fnames: true,
   });
   if (result.error) {
-    throw new Error(result.error);
+    throw result.error;
   }
   return result.code;
 }
