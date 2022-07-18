@@ -250,7 +250,10 @@ describe('protobufjs-loader', function () {
 
                 // Check that declarations from the top-level `import`
                 // fixture are present.
-                assert.include(declarations, 'class NotBar implements INotBar {');
+                assert.include(
+                  declarations,
+                  'class NotBar implements INotBar {'
+                );
 
                 // Check that delcarations from the imported `basic`
                 // fixture are present.
