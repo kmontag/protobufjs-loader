@@ -1,5 +1,5 @@
 const fs = require('fs');
-const { pbjs } = require('protobufjs/cli');
+const { pbjs, pbts } = require('protobufjs/cli');
 const protobuf = require('protobufjs');
 const tmp = require('tmp-promise');
 const validateOptions = require('schema-utils').validate;
@@ -12,16 +12,66 @@ const schema = {
   properties: {
     json: {
       type: 'boolean',
+      default: false,
     },
     paths: {
       type: 'array',
     },
     pbjsArgs: {
       type: 'array',
+      default: [],
+    },
+    pbts: {
+      oneOf: [
+        {
+          type: 'boolean',
+        },
+        {
+          type: 'object',
+          properties: {
+            args: {
+              type: 'array',
+              default: [],
+            },
+          },
+          additionalProperties: false,
+        },
+      ],
+      default: false,
     },
   },
+
+  // pbts config is only applicable if the pbjs target is
+  // `static-module`, i.e. if the `json` flag is false. We enforce
+  // this at the schema level; see
+  // https://json-schema.org/understanding-json-schema/reference/conditionals.html#implication.
+  anyOf: [
+    {
+      properties: {
+        json: { const: true },
+        pbts: { const: false },
+      },
+    },
+    {
+      not: {
+        properties: { json: { const: true } },
+      },
+    },
+  ],
   additionalProperties: false,
 };
+
+/**
+ * Shared type for the validated options object, with no missing
+ * properties (i.e. the user-provided object merged with default
+ * values).
+ *
+ * @typedef {{ args: string[] }} PbtsOptions
+ * @typedef {{
+ *   json: boolean, paths: string[], pbjsArgs: string[],
+ *   pbts: boolean | PbtsOptions
+ * }} LoaderOptions
+ */
 
 /**
  * We're supporting multiple webpack versions, so there are several
@@ -31,11 +81,46 @@ const schema = {
  * The `never` generic in the v5 context sets the return type of
  * `getOptions`. Since we're using the deprecated `loader-utils`
  * method of fetching options, this should be fine; however, if we
- * drop support for older webpack versions, we'll want to define a
- * stricter type for the options object.
+ * drop support for older webpack versions, we'll want to switch to
+ * using `getOptions`.
  *
  * @typedef { import('webpack').LoaderContext<never> | import('webpack4').loader.LoaderContext | import('webpack3').loader.LoaderContext | import('webpack2').loader.LoaderContext } LoaderContext
  */
+
+/** @type { (resourcePath: string, pbtsOptions: true | PbtsOptions, compiledContent: string, callback: NonNullable<ReturnType<LoaderContext['async']>>) => any } */
+const execPbts = (resourcePath, pbtsOptions, compiledContent, callback) => {
+  /** @type PbtsOptions */
+  const normalizedOptions = {
+    args: [],
+    ...(pbtsOptions === true ? {} : pbtsOptions),
+  };
+
+  // pbts CLI only supports streaming from stdin without a lot of
+  // duplicated logic, so we need to use a tmp file. :(
+  tmp
+    .file({ postfix: '.js' })
+    .then(
+      (o) =>
+        new Promise((resolve, reject) => {
+          fs.write(o.fd, compiledContent, (err) => {
+            if (err) {
+              reject(err);
+            } else {
+              resolve(o.path);
+            }
+          });
+        })
+    )
+    .then((compiledFilename) => {
+      const declarationFilename = `${resourcePath}.d.ts`;
+      const pbtsArgs = ['-o', declarationFilename]
+        .concat(normalizedOptions.args)
+        .concat([compiledFilename]);
+      pbts.main(pbtsArgs, (err) => {
+        callback(err, compiledContent);
+      });
+    });
+};
 
 /** @type { (this: LoaderContext, source: string) => any } */
 module.exports = function protobufJsLoader(source) {
@@ -64,7 +149,7 @@ module.exports = function protobufJsLoader(source) {
     return undefined;
   })();
 
-  /** @type {{ json: boolean, paths: string[], pbjsArgs: string[] }} */
+  /** @type LoaderOptions */
   const options = {
     json: false,
 
@@ -72,9 +157,17 @@ module.exports = function protobufJsLoader(source) {
     paths: defaultPaths || [],
 
     pbjsArgs: [],
+
+    pbts: false,
+
     ...getOptions(this),
   };
-  validateOptions(schema, options, { name: 'protobufjs-loader' });
+  try {
+    validateOptions(schema, options, { name: 'protobufjs-loader' });
+  } catch (err) {
+    callback(err instanceof Error ? err : new Error(`${err}`), undefined);
+    return;
+  }
 
   /** @type { string } */
   let filename;
@@ -161,7 +254,11 @@ module.exports = function protobufJsLoader(source) {
             callback(depErr);
           })
           .then(() => {
-            callback(err, result);
+            if (!options.pbts || err) {
+              callback(err, result);
+            } else {
+              execPbts(self.resourcePath, options.pbts, result || '', callback);
+            }
           });
       });
     });

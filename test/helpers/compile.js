@@ -34,7 +34,7 @@ const isWebpack5 =
  * @typedef {{ arguments: [string], context: import('../../index').LoaderContext, options: never }} InspectLoaderResult
  */
 
-/** @type { (fixture: string, loaderOpts?: object, webpackOpts?: object) => Promise<InspectLoaderResult> } */
+/** @type { (fixture: string, loaderOpts?: object, webpackOpts?: object) => Promise<{ inspect: InspectLoaderResult }> } */
 module.exports = function compile(fixture, loaderOpts, webpackOpts) {
   return new Promise((resolve, reject) => {
     /** @type { InspectLoaderResult } */
@@ -108,6 +108,20 @@ module.exports = function compile(fixture, loaderOpts, webpackOpts) {
         }
         if (stats) {
           if (stats.hasErrors()) {
+            if ('compilation' in stats) {
+              /** @type Error */
+              // The `stats` object appears to be incorrectly typed;
+              // this compilation field exists in practice.
+              //
+              // @ts-ignore
+              const compilationErr = stats.compilation.errors[0];
+              if (compilationErr) {
+                return compilationErr;
+              }
+            }
+
+            // fallback in case no specific error was found above for
+            // some reason.
             return 'compilation error';
           }
           if (stats.hasWarnings()) {
@@ -120,7 +134,9 @@ module.exports = function compile(fixture, loaderOpts, webpackOpts) {
       if (problem) {
         reject(problem);
       } else {
-        resolve(inspect);
+        resolve({
+          inspect,
+        });
       }
     });
   });

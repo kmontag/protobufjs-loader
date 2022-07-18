@@ -1,7 +1,10 @@
 const { assert } = require('chai');
+const fs = require('fs');
 const path = require('path');
+const tmp = require('tmp');
 const UglifyJS = require('uglify-js');
 
+const glob = require('glob');
 const compile = require('./helpers/compile');
 
 /**
@@ -51,7 +54,7 @@ describe('protobufjs-loader', function () {
       };
     });
     it('should compile to a JSON representation', function (done) {
-      compile('basic', this.opts).then((inspect) => {
+      compile('basic', this.opts).then(({ inspect }) => {
         const contents = minify(inspect.arguments[0]);
         const innerString =
           'addJSON({foo:{nested:{Bar:{fields:{baz:{type:"string",id:1}}}}}})})';
@@ -63,7 +66,7 @@ describe('protobufjs-loader', function () {
 
   describe('with static code', function () {
     it('should compile static code by default', function (done) {
-      compile('basic').then((inspect) => {
+      compile('basic').then(({ inspect }) => {
         const contents = minify(inspect.arguments[0]);
         assert.include(contents, 'foo.Bar=function(){');
         done();
@@ -71,10 +74,196 @@ describe('protobufjs-loader', function () {
     });
 
     it('should compile static code when the option is set explicitly', function (done) {
-      compile('basic', { json: false }).then((inspect) => {
+      compile('basic', { json: false }).then(({ inspect }) => {
         const contents = minify(inspect.arguments[0]);
         assert.include(contents, 'foo.Bar=function(){');
         done();
+      });
+    });
+
+    describe('with typescript compilation', function () {
+      beforeEach(function (done) {
+        // Typescript generation requires that we write files directly
+        // when the loader is invoked, rather than passing content
+        // upstream to webpack for later assembly.
+        //
+        // To avoid polluting the local file system with these
+        // compiled definitions, we perform the compilation in a tmp
+        // directory.
+        const fixturesPath = path.resolve(__dirname, 'fixtures');
+        tmp.dir((err, tmpDir, cleanup) => {
+          if (err) {
+            throw err;
+          }
+
+          this.tmpDir = tmpDir;
+          this.cleanup = cleanup;
+
+          glob(path.join(fixturesPath, '*.proto'), (globErr, files) => {
+            if (globErr) {
+              throw globErr;
+            }
+            Promise.all(
+              files.map(
+                (file) =>
+                  new Promise((resolve, reject) => {
+                    fs.copyFile(
+                      file,
+                      path.join(tmpDir, path.basename(file)),
+                      (copyErr) => {
+                        if (copyErr) {
+                          reject(copyErr);
+                        } else {
+                          resolve(undefined);
+                        }
+                      }
+                    );
+                  })
+              )
+            ).then(() => {
+              const target = path.resolve(__dirname, '..', 'node_modules');
+              const link = path.join(tmpDir, 'node_modules');
+              fs.symlink(target, link, (symlinkErr) => {
+                if (symlinkErr) {
+                  throw symlinkErr;
+                }
+                done();
+              });
+            });
+          });
+        });
+      });
+
+      afterEach(function () {
+        if (this.cleanup) {
+          this.cleanup();
+        }
+      });
+
+      it('should not compile typescript by default', function (done) {
+        compile(path.join(this.tmpDir, 'basic')).then(() => {
+          glob(path.join(this.tmpDir, '*.d.ts'), (err, files) => {
+            if (err) {
+              throw err;
+            }
+            assert.equal(0, files.length);
+            done();
+          });
+        });
+      });
+
+      it('should fail if typescript compilation is enabled for JSON output', function (done) {
+        compile('basic', {
+          json: true,
+          pbts: true,
+        }).catch((compilationErr) => {
+          assert.include(
+            `${compilationErr}`,
+            'configuration.pbts should be equal to constant false'
+          );
+          glob(path.join(this.tmpDir, '*.d.ts'), (err, files) => {
+            if (err) {
+              throw err;
+            }
+            assert.equal(0, files.length);
+            done();
+          });
+        });
+      });
+
+      it('should compile typescript when enabled', function (done) {
+        compile(path.join(this.tmpDir, 'basic'), { pbts: true }).then(() => {
+          glob(path.join(this.tmpDir, '*.d.ts'), (globErr, files) => {
+            if (globErr) {
+              throw globErr;
+            }
+            const expectedDefinitionsFile = path.join(
+              this.tmpDir,
+              'basic.proto.d.ts'
+            );
+            assert.sameMembers([expectedDefinitionsFile], files);
+
+            fs.readFile(expectedDefinitionsFile, (readErr, content) => {
+              if (readErr) {
+                throw readErr;
+              }
+              const declarations = content.toString();
+              assert.include(declarations, 'public baz: string;');
+              assert.include(declarations, 'public static decodeDelimited');
+              done();
+            });
+          });
+        });
+      });
+
+      it('should pass arguments to pbts', function (done) {
+        compile(path.join(this.tmpDir, 'basic'), {
+          pbts: {
+            args: ['-n', 'testModuleName'],
+          },
+        }).then(() => {
+          glob(path.join(this.tmpDir, '*.d.ts'), (globErr, files) => {
+            if (globErr) {
+              throw globErr;
+            }
+            const expectedDeclarationFile = path.join(
+              this.tmpDir,
+              'basic.proto.d.ts'
+            );
+            assert.sameMembers([expectedDeclarationFile], files);
+
+            fs.readFile(expectedDeclarationFile, (readErr, content) => {
+              if (readErr) {
+                throw readErr;
+              }
+              const declarations = content.toString();
+              assert.include(declarations, 'public baz: string;');
+              assert.include(declarations, 'public static decodeDelimited');
+              assert.include(declarations, 'declare namespace testModuleName');
+              done();
+            });
+          });
+        });
+      });
+
+      describe('with imports', function () {
+        it('should compile imported definitions', function (done) {
+          compile(path.join(this.tmpDir, 'import'), {
+            paths: [this.tmpDir],
+            pbts: true,
+          }).then(() => {
+            glob(path.join(this.tmpDir, '*.d.ts'), (globErr, files) => {
+              if (globErr) {
+                throw globErr;
+              }
+              const expectedDeclarationFile = path.join(
+                this.tmpDir,
+                'import.proto.d.ts'
+              );
+              assert.sameMembers([expectedDeclarationFile], files);
+
+              fs.readFile(expectedDeclarationFile, (readErr, content) => {
+                if (readErr) {
+                  throw readErr;
+                }
+                const declarations = content.toString();
+
+                // Check that declarations from the top-level `import`
+                // fixture are present.
+                assert.include(
+                  declarations,
+                  'class NotBar implements INotBar {'
+                );
+
+                // Check that delcarations from the imported `basic`
+                // fixture are present.
+                assert.include(declarations, 'class Bar implements IBar');
+
+                done();
+              });
+            });
+          });
+        });
       });
     });
   });
@@ -82,7 +271,7 @@ describe('protobufjs-loader', function () {
   describe('with an invalid protobuf file', function () {
     it('should throw a compilation error', function (done) {
       compile('invalid').catch((err) => {
-        assert.equal(err, 'compilation error');
+        assert.include(`${err}`, "illegal token 'invalid'");
         done();
       });
     });
@@ -90,7 +279,7 @@ describe('protobufjs-loader', function () {
 
   describe('with command line options', function () {
     it('should pass command line options to the pbjs call', function (done) {
-      compile('basic', { pbjsArgs: ['--no-encode'] }).then((inspect) => {
+      compile('basic', { pbjsArgs: ['--no-encode'] }).then(({ inspect }) => {
         const contents = minify(inspect.arguments[0]);
 
         // Sanity check
@@ -121,7 +310,7 @@ describe('protobufjs-loader', function () {
             modules: ['node_modules', path.resolve(__dirname, 'fixtures')],
           },
         }
-      ).then((inspect) => {
+      ).then(({ inspect }) => {
         const contents = minify(inspect.arguments[0]);
         assert.include(contents, innerString);
         done();
@@ -133,7 +322,7 @@ describe('protobufjs-loader', function () {
       compile('import', {
         json: true,
         paths: [path.resolve(__dirname, 'fixtures')],
-      }).then((inspect) => {
+      }).then(({ inspect }) => {
         const contents = minify(inspect.arguments[0]);
         assert.include(contents, innerString);
         done();
@@ -142,7 +331,7 @@ describe('protobufjs-loader', function () {
 
     it('should add the imports as dependencies', function (done) {
       compile('import', { paths: [path.resolve(__dirname, 'fixtures')] }).then(
-        (inspect) => {
+        ({ inspect }) => {
           assert.include(
             // This method is missing from the typings for older webpack
             // versions, but it's supported in practice. If we drop
@@ -163,7 +352,22 @@ describe('protobufjs-loader', function () {
         // No include paths provided, so the 'import' fixture should
         // fail to compile.
       }).catch((err) => {
-        assert.equal(err, 'compilation error');
+        assert.include(
+          `${err}`,
+          "no such Type or Enum 'Bar' in Type .foo.NotBar"
+        );
+        done();
+      });
+    });
+  });
+
+  describe('with invalid options', function () {
+    it('should fail if unreconized properties are added', function (done) {
+      compile('basic', {
+        json: true,
+        foo: true,
+      }).catch((err) => {
+        assert.include(`${err}`, "configuration has an unknown property 'foo'");
         done();
       });
     });
