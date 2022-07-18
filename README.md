@@ -50,7 +50,7 @@ module.exports = {
                  * being processed, with a `.d.ts` extension.
                  *
                  * This only works if you're using the 'static-module' target
-                 * for pbjs (enabled by default).
+                 * for pbjs (i.e. the default target).
                  *
                  * The value here can be a config object or a boolean; set it to
                  * true to enable pbts with default configuration.
@@ -61,7 +61,7 @@ module.exports = {
                   /* Additional command line arguments passed to pbts.
                    */
                   args: ['--no-comments'],
-                }
+                },
 
                 /* Set the "target" flag to pbjs.
                  *
