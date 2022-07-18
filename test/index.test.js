@@ -80,6 +80,15 @@ describe('with static code', function () {
   });
 });
 
+describe('with an invalid protobuf file', function () {
+  it('should throw a compilation error', function (done) {
+    compile('invalid').catch(function (err) {
+      assert.equal(err, 'compilation error');
+      done();
+    });
+  });
+});
+
 describe('with command line options', function () {
   it('should pass command line options to the pbjs call', function (done) {
     compile('basic', { pbjsArgs: ['--no-encode'] }).then(function (inspect) {
