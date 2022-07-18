@@ -22,6 +22,7 @@
     "tmp-promise": "^1.0.4"
   },
   "devDependencies": {
+    "@types/mocha": "^8.2.3",
     "chai": "^4.1.2",
     "chalk": "^4.1.2",
     "escodegen": "^1.9.0",
