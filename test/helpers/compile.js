@@ -34,7 +34,7 @@ const isWebpack5 =
  * @typedef {{ arguments: [string], context: import('../../index').LoaderContext, options: never }} InspectLoaderResult
  */
 
-/** @type { (fixture: string, loaderOpts?: object, webpackOpts?: object) => Promise<InspectLoaderResult> } */
+/** @type { (fixture: string, loaderOpts?: object, webpackOpts?: object) => Promise<{ inspect: InspectLoaderResult, fs: MemoryFS }> } */
 module.exports = function compile(fixture, loaderOpts, webpackOpts) {
   return new Promise((resolve, reject) => {
     /** @type { InspectLoaderResult } */
@@ -120,7 +120,10 @@ module.exports = function compile(fixture, loaderOpts, webpackOpts) {
       if (problem) {
         reject(problem);
       } else {
-        resolve(inspect);
+        resolve({
+          inspect,
+          fs,
+        });
       }
     });
   });

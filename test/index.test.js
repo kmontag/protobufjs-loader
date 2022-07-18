@@ -51,7 +51,7 @@ describe('protobufjs-loader', function () {
       };
     });
     it('should compile to a JSON representation', function (done) {
-      compile('basic', this.opts).then((inspect) => {
+      compile('basic', this.opts).then(({ inspect }) => {
         const contents = minify(inspect.arguments[0]);
         const innerString =
           'addJSON({foo:{nested:{Bar:{fields:{baz:{type:"string",id:1}}}}}})})';
@@ -63,7 +63,7 @@ describe('protobufjs-loader', function () {
 
   describe('with static code', function () {
     it('should compile static code by default', function (done) {
-      compile('basic').then((inspect) => {
+      compile('basic').then(({ inspect }) => {
         const contents = minify(inspect.arguments[0]);
         assert.include(contents, 'foo.Bar=function(){');
         done();
@@ -71,7 +71,7 @@ describe('protobufjs-loader', function () {
     });
 
     it('should compile static code when the option is set explicitly', function (done) {
-      compile('basic', { json: false }).then((inspect) => {
+      compile('basic', { json: false }).then(({ inspect }) => {
         const contents = minify(inspect.arguments[0]);
         assert.include(contents, 'foo.Bar=function(){');
         done();
@@ -90,7 +90,7 @@ describe('protobufjs-loader', function () {
 
   describe('with command line options', function () {
     it('should pass command line options to the pbjs call', function (done) {
-      compile('basic', { pbjsArgs: ['--no-encode'] }).then((inspect) => {
+      compile('basic', { pbjsArgs: ['--no-encode'] }).then(({ inspect }) => {
         const contents = minify(inspect.arguments[0]);
 
         // Sanity check
@@ -121,7 +121,7 @@ describe('protobufjs-loader', function () {
             modules: ['node_modules', path.resolve(__dirname, 'fixtures')],
           },
         }
-      ).then((inspect) => {
+      ).then(({ inspect }) => {
         const contents = minify(inspect.arguments[0]);
         assert.include(contents, innerString);
         done();
@@ -133,7 +133,7 @@ describe('protobufjs-loader', function () {
       compile('import', {
         json: true,
         paths: [path.resolve(__dirname, 'fixtures')],
-      }).then((inspect) => {
+      }).then(({ inspect }) => {
         const contents = minify(inspect.arguments[0]);
         assert.include(contents, innerString);
         done();
@@ -142,7 +142,7 @@ describe('protobufjs-loader', function () {
 
     it('should add the imports as dependencies', function (done) {
       compile('import', { paths: [path.resolve(__dirname, 'fixtures')] }).then(
-        (inspect) => {
+        ({ inspect }) => {
           assert.include(
             // This method is missing from the typings for older webpack
             // versions, but it's supported in practice. If we drop
