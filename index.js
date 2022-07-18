@@ -12,17 +12,35 @@ const schema = {
   properties: {
     json: {
       type: 'boolean',
+      default: false,
     },
     paths: {
       type: 'array',
     },
     pbjsArgs: {
       type: 'array',
+      default: [],
     },
     pbts: {
       type: 'boolean',
+      default: false,
     },
   },
+
+  // pbts config is only applicable if the pbjs target is
+  // `static-module`, i.e. if the `json` flag is false. We enforce
+  // this at the schema level; see
+  // https://json-schema.org/understanding-json-schema/reference/conditionals.html#implication.
+  anyOf: [{
+    properties: {
+      json: { const: true },
+      pbts: { const: false },
+    }
+  }, {
+    not: {
+      properties: { json: { const: true } },
+    },
+  }],
   additionalProperties: false,
 };
 
@@ -40,8 +58,8 @@ const schema = {
  * @typedef { import('webpack').LoaderContext<never> | import('webpack4').loader.LoaderContext | import('webpack3').loader.LoaderContext | import('webpack2').loader.LoaderContext } LoaderContext
  */
 
-/** @type { (resourcePath: string, compiledContent: string, context: LoaderContext, callback: NonNullable<ReturnType<LoaderContext['async']>>) => any } */
-const execPBTS = (resourcePath, compiledContent, context, callback) => {
+/** @type { (resourcePath: string, compiledContent: string, callback: NonNullable<ReturnType<LoaderContext['async']>>) => any } */
+const execPbts = (resourcePath, compiledContent, callback) => {
   // pbts CLI only supports streaming from stdin without a lot of
   // duplicated logic, so we need to use a tmp file. :(
   tmp
@@ -107,7 +125,12 @@ module.exports = function protobufJsLoader(source) {
 
     ...getOptions(this),
   };
-  validateOptions(schema, options, { name: 'protobufjs-loader' });
+  try {
+    validateOptions(schema, options, { name: 'protobufjs-loader' });
+  } catch (err) {
+    callback(err instanceof Error ? err : new Error('' + err), undefined);
+    return;
+  }
 
   /** @type { string } */
   let filename;
@@ -197,7 +220,7 @@ module.exports = function protobufJsLoader(source) {
             if (!options.pbts || err) {
               callback(err, result);
             } else {
-              execPBTS(self.resourcePath, result || '', self, callback);
+              execPbts(self.resourcePath, result || '', callback);
             }
           });
       });
