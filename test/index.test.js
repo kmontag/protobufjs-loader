@@ -171,7 +171,7 @@ describe('protobufjs-loader', function () {
         });
       });
 
-      it('should compile typescript', function (done) {
+      it('should compile typescript when enabled', function (done) {
         compile(path.join(this.tmpDir, 'basic'), { pbts: true }).then(() => {
           glob(path.join(this.tmpDir, '*.d.ts'), (globErr, files) => {
             if (globErr) {
@@ -187,10 +187,77 @@ describe('protobufjs-loader', function () {
               if (readErr) {
                 throw readErr;
               }
-              const definitions = content.toString();
-              assert.include(definitions, 'public baz: string;');
-              assert.include(definitions, 'public static decodeDelimited');
+              const declarations = content.toString();
+              assert.include(declarations, 'public baz: string;');
+              assert.include(declarations, 'public static decodeDelimited');
               done();
+            });
+          });
+        });
+      });
+
+      it('should pass arguments to pbts', function (done) {
+        compile(path.join(this.tmpDir, 'basic'), {
+          pbts: {
+            args: ['-n', 'testModuleName'],
+          },
+        }).then(() => {
+          glob(path.join(this.tmpDir, '*.d.ts'), (globErr, files) => {
+            if (globErr) {
+              throw globErr;
+            }
+            const expectedDeclarationFile = path.join(
+              this.tmpDir,
+              'basic.proto.d.ts'
+            );
+            assert.sameMembers([expectedDeclarationFile], files);
+
+            fs.readFile(expectedDeclarationFile, (readErr, content) => {
+              if (readErr) {
+                throw readErr;
+              }
+              const declarations = content.toString();
+              assert.include(declarations, 'public baz: string;');
+              assert.include(declarations, 'public static decodeDelimited');
+              assert.include(declarations, 'declare namespace testModuleName');
+              done();
+            });
+          });
+        });
+      });
+
+      describe('with imports', function () {
+        it('should compile imported definitions', function (done) {
+          compile(path.join(this.tmpDir, 'import'), {
+            paths: [this.tmpDir],
+            pbts: true,
+          }).then(() => {
+            glob(path.join(this.tmpDir, '*.d.ts'), (globErr, files) => {
+              if (globErr) {
+                throw globErr;
+              }
+              const expectedDeclarationFile = path.join(
+                this.tmpDir,
+                'import.proto.d.ts'
+              );
+              assert.sameMembers([expectedDeclarationFile], files);
+
+              fs.readFile(expectedDeclarationFile, (readErr, content) => {
+                if (readErr) {
+                  throw readErr;
+                }
+                const declarations = content.toString();
+
+                // Check that declarations from the top-level `import`
+                // fixture are present.
+                assert.include(declarations, 'class NotBar implements INotBar {');
+
+                // Check that delcarations from the imported `basic`
+                // fixture are present.
+                assert.include(declarations, 'class Bar implements IBar');
+
+                done();
+              });
             });
           });
         });
