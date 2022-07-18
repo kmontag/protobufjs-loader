@@ -108,6 +108,20 @@ module.exports = function compile(fixture, loaderOpts, webpackOpts) {
         }
         if (stats) {
           if (stats.hasErrors()) {
+            if ('compilation' in stats) {
+              /** @type Error */
+              // The `stats` object appears to be incorrectly typed;
+              // this compilation field exists in practice.
+              //
+              // @ts-ignore
+              const compilationErr = stats.compilation.errors[0];
+              if (compilationErr) {
+                return compilationErr;
+              }
+            }
+
+            // fallback in case no specific error was found above for
+            // some reason.
             return 'compilation error';
           }
           if (stats.hasWarnings()) {

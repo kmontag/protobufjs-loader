@@ -31,16 +31,19 @@ const schema = {
   // `static-module`, i.e. if the `json` flag is false. We enforce
   // this at the schema level; see
   // https://json-schema.org/understanding-json-schema/reference/conditionals.html#implication.
-  anyOf: [{
-    properties: {
-      json: { const: true },
-      pbts: { const: false },
-    }
-  }, {
-    not: {
-      properties: { json: { const: true } },
+  anyOf: [
+    {
+      properties: {
+        json: { const: true },
+        pbts: { const: false },
+      },
     },
-  }],
+    {
+      not: {
+        properties: { json: { const: true } },
+      },
+    },
+  ],
   additionalProperties: false,
 };
 

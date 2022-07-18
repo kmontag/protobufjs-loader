@@ -152,6 +152,25 @@ describe('protobufjs-loader', function () {
         });
       });
 
+      it('should fail if typescript compilation is enabled for JSON output', function (done) {
+        compile('basic', {
+          json: true,
+          pbts: true,
+        }).catch((compilationErr) => {
+          assert.include(
+            '' + compilationErr,
+            'configuration.pbts should be equal to constant false'
+          );
+          glob(path.join(this.tmpDir, '*.d.ts'), (err, files) => {
+            if (err) {
+              throw err;
+            }
+            assert.equal(0, files.length);
+            done();
+          });
+        });
+      });
+
       it('should compile typescript', function (done) {
         compile(path.join(this.tmpDir, 'basic'), { pbts: true }).then(() => {
           glob(path.join(this.tmpDir, '*.d.ts'), (globErr, files) => {
@@ -182,7 +201,7 @@ describe('protobufjs-loader', function () {
   describe('with an invalid protobuf file', function () {
     it('should throw a compilation error', function (done) {
       compile('invalid').catch((err) => {
-        assert.equal(err, 'compilation error');
+        assert.include('' + err, "illegal token 'invalid'");
         done();
       });
     });
@@ -263,7 +282,22 @@ describe('protobufjs-loader', function () {
         // No include paths provided, so the 'import' fixture should
         // fail to compile.
       }).catch((err) => {
-        assert.equal(err, 'compilation error');
+        assert.include(
+          '' + err,
+          "no such Type or Enum 'Bar' in Type .foo.NotBar"
+        );
+        done();
+      });
+    });
+  });
+
+  describe('with invalid options', function () {
+    it('should fail if unreconized properties are added', function (done) {
+      compile('basic', {
+        json: true,
+        foo: true,
+      }).catch((err) => {
+        assert.include('' + err, "configuration has an unknown property 'foo'");
         done();
       });
     });
