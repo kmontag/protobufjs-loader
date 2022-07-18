@@ -18,7 +18,7 @@
   "dependencies": {
     "loader-utils": "^1.1.0",
     "protobufjs": "^6.8.0",
-    "schema-utils": "^0.4.2",
+    "schema-utils": "^4.0.0",
     "tmp-promise": "^1.0.4"
   },
   "devDependencies": {

@@ -4,10 +4,11 @@ const fs = require('fs');
 const pbjs = require('protobufjs/cli').pbjs;
 const protobuf = require('protobufjs');
 const tmp = require('tmp-promise');
-const validateOptions = require('schema-utils');
+const validateOptions = require('schema-utils').validate;
 
 const getOptions = require('loader-utils').getOptions;
 
+/** @type { Parameters<typeof validateOptions>[0] } */
 const schema = {
   type: 'object',
   properties: {
@@ -47,7 +48,7 @@ module.exports = function (source) {
     },
     getOptions(this)
   );
-  validateOptions(schema, options, 'protobufjs-loader');
+  validateOptions(schema, options, { name: 'protobufjs-loader' });
 
   let filename;
   tmp
