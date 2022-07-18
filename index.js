@@ -44,8 +44,10 @@ module.exports = function (source) {
         // was deprecated in webpack@3 and removed in webpack@4.
         (this.options.resolve || {}).modules
       : // For webpack@4 and webpack@5. The `_compiler` property is
-        // deprecated, but still works as of webpack@5.
-        (this._compiler.options.resolve || {}).modules;
+      // deprecated, but still works as of webpack@5.
+      this._compiler
+      ? (this._compiler.options.resolve || {}).modules
+      : undefined;
 
   const options = Object.assign(
     {
