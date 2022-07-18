@@ -25,11 +25,20 @@ const schema = {
   additionalProperties: false,
 };
 
+/**
+ * We're supporting multiple webpack versions, so there are several
+ * different possible structures for the `this` context in our loader
+ * callback.
+ *
+ * @typedef { import('webpack').LoaderContext<never> | import('webpack4').loader.LoaderContext | import('webpack3').loader.LoaderContext } LoaderContext
+ */
+
+/** @type { (this: LoaderContext, source: string) => any } */
 module.exports = function (source) {
   let callback = this.async();
   let self = this;
 
-  const paths = this.options
+  const paths = 'options' in this
     ? // For webpack@2 and webpack@3. property loaderContext.options
       // was deprecated in webpack@3 and removed in webpack@4.
       (this.options.resolve || {}).modules

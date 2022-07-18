@@ -24,6 +24,8 @@
   "devDependencies": {
     "@types/loader-utils": "^2.0.3",
     "@types/mocha": "^8.2.3",
+    "@types/webpack3": "npm:@types/webpack@^3.0.0",
+    "@types/webpack4": "npm:@types/webpack@^4.0.0",
     "chai": "^4.1.2",
     "chalk": "^4.1.2",
     "escodegen": "^1.9.0",
