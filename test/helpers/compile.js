@@ -1,5 +1,3 @@
-'use strict';
-
 const MemoryFS = require('memory-fs');
 const path = require('path');
 
@@ -37,7 +35,7 @@ const isWebpack5 =
 /** @type { (fixture: string, loaderOpts?: object, webpackOpts?: object) => Promise<InspectLoaderResult> } */
 module.exports = function (fixture, loaderOpts, webpackOpts) {
   webpackOpts = webpackOpts || {};
-  return new Promise(function (resolve, reject) {
+  return new Promise((resolve, reject) => {
     /** @type { InspectLoaderResult } */
     let inspect;
 
@@ -53,49 +51,47 @@ module.exports = function (fixture, loaderOpts, webpackOpts) {
       // @ts-ignore
       webpack(
         // @ts-ignore
-        Object.assign(
-          {
-            entry: path.resolve(fixturePath, `${fixture}.proto`),
-            output: {
-              path: '/',
-              filename: 'compiled.js',
-            },
-            module: {
-              rules: [
-                {
-                  test: /\.proto$/,
-                  use: [
-                    {
-                      loader: 'inspect-loader',
-                      options: {
-                        /** @type { (inspect: InspectLoaderResult) => any } */
-                        callback: function (callbackInspect) {
-                          inspect = callbackInspect;
-                        },
+        {
+          entry: path.resolve(fixturePath, `${fixture}.proto`),
+          output: {
+            path: '/',
+            filename: 'compiled.js',
+          },
+          module: {
+            rules: [
+              {
+                test: /\.proto$/,
+                use: [
+                  {
+                    loader: 'inspect-loader',
+                    options: {
+                      /** @type { (inspect: InspectLoaderResult) => any } */
+                      callback(callbackInspect) {
+                        inspect = callbackInspect;
                       },
                     },
-                    {
-                      loader: path.resolve(__dirname, '..', '..', 'index.js'),
-                      options: loaderOpts,
-                    },
-                  ],
-                },
-              ],
-            },
+                  },
+                  {
+                    loader: path.resolve(__dirname, '..', '..', 'index.js'),
+                    options: loaderOpts,
+                  },
+                ],
+              },
+            ],
           },
           // webpack@4 adds the `mode` configuration option, which adds some
           // additional config defaults that we want to avoid for
           // consistency.
-          isWebpack4Plus ? { mode: 'none' } : {},
+          ...(isWebpack4Plus ? { mode: 'none' } : {}),
           // Make sure to test webpack@5 without backwards-compatibility
           // enabled. See
           // https://webpack.js.org/configuration/experiments/#experimentsbackcompat.
-          isWebpack5 ? { experiments: { backCompat: false } } : {},
-          webpackOpts
-        )
+          ...(isWebpack5 ? { experiments: { backCompat: false } } : {}),
+          ...webpackOpts,
+        }
       );
 
-    let fs = new MemoryFS();
+    const fs = new MemoryFS();
 
     // This property is missing from the typings for older webpack
     // versions, but it's supported in practice. If we drop support
@@ -104,14 +100,16 @@ module.exports = function (fixture, loaderOpts, webpackOpts) {
     // @ts-ignore
     compiler.outputFileSystem = fs;
 
-    compiler.run(function (err, stats) {
+    compiler.run((err, stats) => {
       const problem = (function () {
         if (err) {
           return err;
-        } else if (stats) {
+        }
+        if (stats) {
           if (stats.hasErrors()) {
             return 'compilation error';
-          } else if (stats.hasWarnings()) {
+          }
+          if (stats.hasWarnings()) {
             return 'compilation warning';
           }
         }
