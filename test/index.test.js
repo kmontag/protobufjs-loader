@@ -50,7 +50,7 @@ describe('protobufjs-loader', function () {
   describe('with JSON / reflection', function () {
     beforeEach(function () {
       this.opts = {
-        json: true,
+        target: 'json-module',
       };
     });
     it('should compile to a JSON representation', function (done) {
@@ -74,7 +74,7 @@ describe('protobufjs-loader', function () {
     });
 
     it('should compile static code when the option is set explicitly', function (done) {
-      compile('basic', { json: false }).then(({ inspect }) => {
+      compile('basic', { target: 'static-module' }).then(({ inspect }) => {
         const contents = minify(inspect.arguments[0]);
         assert.include(contents, 'foo.Bar=function(){');
         done();
@@ -152,25 +152,6 @@ describe('protobufjs-loader', function () {
         });
       });
 
-      it('should fail if typescript compilation is enabled for JSON output', function (done) {
-        compile('basic', {
-          json: true,
-          pbts: true,
-        }).catch((compilationErr) => {
-          assert.include(
-            `${compilationErr}`,
-            'configuration.pbts should be equal to constant false'
-          );
-          glob(path.join(this.tmpDir, '*.d.ts'), (err, files) => {
-            if (err) {
-              throw err;
-            }
-            assert.equal(0, files.length);
-            done();
-          });
-        });
-      });
-
       it('should compile typescript when enabled', function (done) {
         compile(path.join(this.tmpDir, 'basic'), { pbts: true }).then(() => {
           glob(path.join(this.tmpDir, '*.d.ts'), (globErr, files) => {
@@ -190,6 +171,37 @@ describe('protobufjs-loader', function () {
               const declarations = content.toString();
               assert.include(declarations, 'public baz: string;');
               assert.include(declarations, 'public static decodeDelimited');
+              done();
+            });
+          });
+        });
+      });
+
+      it('should compile nearly-empty declarations if typescript compilation is enabled for JSON output', function (done) {
+        compile(path.join(this.tmpDir, 'basic'), {
+          target: 'json-module',
+          pbts: true,
+        }).then(() => {
+          glob(path.join(this.tmpDir, '*.d.ts'), (err, files) => {
+            if (err) {
+              throw err;
+            }
+
+            const expectedDefinitionsFile = path.join(
+              this.tmpDir,
+              'basic.proto.d.ts'
+            );
+            assert.sameMembers([expectedDefinitionsFile], files);
+
+            fs.readFile(expectedDefinitionsFile, (readErr, content) => {
+              if (readErr) {
+                throw readErr;
+              }
+              const declarations = content.toString();
+              assert.equal(
+                declarations.trim(),
+                'import * as $protobuf from "protobufjs";'
+              );
               done();
             });
           });
@@ -303,7 +315,7 @@ describe('protobufjs-loader', function () {
       compile(
         'import',
         {
-          json: true,
+          target: 'json-module',
         },
         {
           resolve: {
@@ -320,7 +332,7 @@ describe('protobufjs-loader', function () {
     it('should respect an explicit paths configuration', function (done) {
       const { innerString } = this;
       compile('import', {
-        json: true,
+        target: 'json-module',
         paths: [path.resolve(__dirname, 'fixtures')],
       }).then(({ inspect }) => {
         const contents = minify(inspect.arguments[0]);
@@ -348,7 +360,7 @@ describe('protobufjs-loader', function () {
 
     it('should fail when the import is not found', function (done) {
       compile('import', {
-        json: true,
+        target: 'json-module',
         // No include paths provided, so the 'import' fixture should
         // fail to compile.
       }).catch((err) => {
@@ -364,7 +376,7 @@ describe('protobufjs-loader', function () {
   describe('with invalid options', function () {
     it('should fail if unreconized properties are added', function (done) {
       compile('basic', {
-        json: true,
+        target: 'json-module',
         foo: true,
       }).catch((err) => {
         assert.include(`${err}`, "configuration has an unknown property 'foo'");
