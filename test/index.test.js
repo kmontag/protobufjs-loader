@@ -136,6 +136,11 @@ describe('with imports', function () {
     compile('import', { paths: [path.resolve(__dirname, 'fixtures')] }).then(
       function (inspect) {
         assert.include(
+          // This method is missing from the typings for older webpack
+          // versions, but it's supported in practice. If we drop
+          // support for v4 and below, we can remove this.
+          //
+          // @ts-ignore
           inspect.context.getDependencies(),
           path.resolve(__dirname, 'fixtures', 'basic.proto')
         );
