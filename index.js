@@ -6,13 +6,15 @@ const validateOptions = require('schema-utils').validate;
 
 const { getOptions } = require('loader-utils');
 
+const TARGET_STATIC_MODULE = 'static-module';
+
 /** @type { Parameters<typeof validateOptions>[0] } */
 const schema = {
   type: 'object',
   properties: {
-    json: {
-      type: 'boolean',
-      default: false,
+    target: {
+      type: 'string',
+      default: TARGET_STATIC_MODULE,
     },
     paths: {
       type: 'array',
@@ -41,23 +43,6 @@ const schema = {
     },
   },
 
-  // pbts config is only applicable if the pbjs target is
-  // `static-module`, i.e. if the `json` flag is false. We enforce
-  // this at the schema level; see
-  // https://json-schema.org/understanding-json-schema/reference/conditionals.html#implication.
-  anyOf: [
-    {
-      properties: {
-        json: { const: true },
-        pbts: { const: false },
-      },
-    },
-    {
-      not: {
-        properties: { json: { const: true } },
-      },
-    },
-  ],
   additionalProperties: false,
 };
 
@@ -68,8 +53,9 @@ const schema = {
  *
  * @typedef {{ args: string[] }} PbtsOptions
  * @typedef {{
- *   json: boolean, paths: string[], pbjsArgs: string[],
- *   pbts: boolean | PbtsOptions
+ *   paths: string[], pbjsArgs: string[],
+ *   pbts: boolean | PbtsOptions,
+ *   target: string,
  * }} LoaderOptions
  */
 
@@ -152,7 +138,7 @@ module.exports = function protobufJsLoader(source) {
 
     /** @type LoaderOptions */
     const options = {
-      json: false,
+      target: TARGET_STATIC_MODULE,
 
       // Default to the paths given to the compiler.
       paths: defaultPaths || [],
@@ -235,13 +221,12 @@ module.exports = function protobufJsLoader(source) {
           });
         });
 
-        let args = options.pbjsArgs;
+        /** @type { string[] } */
+        let args = ['-t', options.target];
         paths.forEach((path) => {
           args = args.concat(['-p', path]);
         });
-        args = args
-          .concat(['-t', options.json ? 'json-module' : 'static-module'])
-          .concat([filename]);
+        args = args.concat(options.pbjsArgs).concat([filename]);
 
         pbjs.main(args, (err, result) => {
           // Make sure we've added all dependencies before completing.
