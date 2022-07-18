@@ -1,7 +1,6 @@
 'use strict';
 
 const fs = require('fs');
-const path = require('path');
 const pbjs = require('protobufjs/cli').pbjs;
 const protobuf = require('protobufjs');
 const tmp = require('tmp-promise');
