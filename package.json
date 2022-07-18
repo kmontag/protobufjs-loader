@@ -23,6 +23,7 @@
     "tmp-promise": "^1.0.4"
   },
   "devDependencies": {
+    "@types/chai": "^4.3.1",
     "@types/loader-utils": "^2.0.3",
     "@types/mocha": "^8.2.3",
     "@types/webpack2": "npm:@types/webpack@^2.0.0",
