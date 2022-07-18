@@ -38,13 +38,14 @@ module.exports = function (source) {
   let callback = this.async();
   let self = this;
 
-  const paths = 'options' in this
-    ? // For webpack@2 and webpack@3. property loaderContext.options
-      // was deprecated in webpack@3 and removed in webpack@4.
-      (this.options.resolve || {}).modules
-    : // For webpack@4 and webpack@5. The `_compiler` property is
-      // deprecated, but still works as of webpack@5.
-      (this._compiler.options.resolve || {}).modules;
+  const paths =
+    'options' in this
+      ? // For webpack@2 and webpack@3. property loaderContext.options
+        // was deprecated in webpack@3 and removed in webpack@4.
+        (this.options.resolve || {}).modules
+      : // For webpack@4 and webpack@5. The `_compiler` property is
+        // deprecated, but still works as of webpack@5.
+        (this._compiler.options.resolve || {}).modules;
 
   const options = Object.assign(
     {
