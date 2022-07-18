@@ -1,7 +1,7 @@
 {
   "extends": [
     "eslint:recommended",
-    "airbnb",
+    "airbnb/base",
     "plugin:mocha/recommended",
     "prettier"
   ],
@@ -11,8 +11,11 @@
   },
   "plugins": ["mocha"],
   "rules": {
-    "no-underscore-dangle": ["error", {
-      "allowAfterThis": true
-    }]
+    "no-underscore-dangle": [
+      "error",
+      {
+        "allowAfterThis": true
+      }
+    ]
   }
 }
