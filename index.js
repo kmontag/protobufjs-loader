@@ -30,7 +30,7 @@ const schema = {
  * different possible structures for the `this` context in our loader
  * callback.
  *
- * @typedef { import('webpack').LoaderContext<never> | import('webpack4').loader.LoaderContext | import('webpack3').loader.LoaderContext } LoaderContext
+ * @typedef { import('webpack').LoaderContext<never> | import('webpack4').loader.LoaderContext | import('webpack3').loader.LoaderContext | import('webpack2').loader.LoaderContext } LoaderContext
  */
 
 /** @type { (this: LoaderContext, source: string) => any } */
