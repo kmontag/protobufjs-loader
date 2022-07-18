@@ -31,26 +31,42 @@ module.exports = {
             use: {
               loader: 'protobufjs-loader',
               options: {
-                /* controls the "target" flag to pbjs - true for
+                /* Controls the "target" flag to pbjs - true for
                  * json-module, false for static-module.
+                 *
                  * default: false
                  */
-                json: true,
+                json: false,
 
-                /* import paths provided to pbjs.
+                /* Import paths provided to pbjs.
+                 *
                  * default: webpack import paths (i.e. config.resolve.modules)
                  */
                 paths: ['/path/to/definitions'],
 
-                /* additional command line arguments passed to
+                /* Additional command line arguments passed to pbjs.
                  * pbjs, see https://github.com/dcodeIO/ProtoBuf.js/#pbjs-for-javascript
                  * for a list of what's available.
+                 *
                  * default: []
                  */
                 pbjsArgs: ['--no-encode'],
 
-                /* Enable Typescript declaration file generation via pbts. */
-                pbts: false
+                /* Enable Typescript declaration file generation via pbts.
+                 *
+                 * Declaration files will be written every time the loader runs.
+                 * They'll be saved in the same directory as the protobuf file
+                 * being processed, with a `.d.ts` extension.
+                 *
+                 * This can be a config object or a boolean.
+                 *
+                 * default: false
+                 */
+                pbts: {
+                  /* Additional command line arguments passed to pbts.
+                   */
+                  args: ['--no-comments'],
+                }
               }
             }
         }]

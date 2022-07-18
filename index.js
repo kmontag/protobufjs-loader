@@ -22,7 +22,21 @@ const schema = {
       default: [],
     },
     pbts: {
-      type: 'boolean',
+      oneOf: [
+        {
+          type: 'boolean',
+        },
+        {
+          type: 'object',
+          properties: {
+            args: {
+              type: 'array',
+              default: [],
+            },
+          },
+          additionalProperties: false,
+        },
+      ],
       default: false,
     },
   },
@@ -48,6 +62,18 @@ const schema = {
 };
 
 /**
+ * Shared type for the validated options object, with no missing
+ * properties (i.e. the user-provided object merged with default
+ * values).
+ *
+ * @typedef {{ args: string[] }} PbtsOptions
+ * @typedef {{
+ *   json: boolean, paths: string[], pbjsArgs: string[],
+ *   pbts: boolean | PbtsOptions
+ * }} LoaderOptions
+ */
+
+/**
  * We're supporting multiple webpack versions, so there are several
  * different possible structures for the `this` context in our loader
  * callback.
@@ -55,14 +81,20 @@ const schema = {
  * The `never` generic in the v5 context sets the return type of
  * `getOptions`. Since we're using the deprecated `loader-utils`
  * method of fetching options, this should be fine; however, if we
- * drop support for older webpack versions, we'll want to define a
- * stricter type for the options object.
+ * drop support for older webpack versions, we'll want to switch to
+ * using `getOptions`.
  *
  * @typedef { import('webpack').LoaderContext<never> | import('webpack4').loader.LoaderContext | import('webpack3').loader.LoaderContext | import('webpack2').loader.LoaderContext } LoaderContext
  */
 
-/** @type { (resourcePath: string, compiledContent: string, callback: NonNullable<ReturnType<LoaderContext['async']>>) => any } */
-const execPbts = (resourcePath, compiledContent, callback) => {
+/** @type { (resourcePath: string, pbtsOptions: true | PbtsOptions, compiledContent: string, callback: NonNullable<ReturnType<LoaderContext['async']>>) => any } */
+const execPbts = (resourcePath, pbtsOptions, compiledContent, callback) => {
+  /** @type PbtsOptions */
+  const normalizedOptions = {
+    args: [],
+    ...(pbtsOptions === true ? {} : pbtsOptions),
+  };
+
   // pbts CLI only supports streaming from stdin without a lot of
   // duplicated logic, so we need to use a tmp file. :(
   tmp
@@ -81,7 +113,9 @@ const execPbts = (resourcePath, compiledContent, callback) => {
     )
     .then((compiledFilename) => {
       const declarationFilename = `${resourcePath}.d.ts`;
-      const pbtsArgs = ['-o', declarationFilename, compiledFilename];
+      const pbtsArgs = ['-o', declarationFilename]
+        .concat(normalizedOptions.args)
+        .concat([compiledFilename]);
       pbts.main(pbtsArgs, (err) => {
         callback(err, compiledContent);
       });
@@ -115,7 +149,7 @@ module.exports = function protobufJsLoader(source) {
     return undefined;
   })();
 
-  /** @type {{ json: boolean, paths: string[], pbjsArgs: string[], pbts: boolean }} */
+  /** @type LoaderOptions */
   const options = {
     json: false,
 
@@ -223,7 +257,7 @@ module.exports = function protobufJsLoader(source) {
             if (!options.pbts || err) {
               callback(err, result);
             } else {
-              execPbts(self.resourcePath, result || '', callback);
+              execPbts(self.resourcePath, options.pbts, result || '', callback);
             }
           });
       });
