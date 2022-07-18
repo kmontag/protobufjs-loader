@@ -20,8 +20,8 @@ const schema = {
       type: 'array',
     },
     pbts: {
-      type: 'boolean'
-    }
+      type: 'boolean',
+    },
   },
   additionalProperties: false,
 };
@@ -67,7 +67,7 @@ module.exports = function protobufJsLoader(source) {
     return undefined;
   })();
 
-  /** @type {{ json: boolean, paths: string[], pbjsArgs: string[] }} */
+  /** @type {{ json: boolean, paths: string[], pbjsArgs: string[], pbts: boolean }} */
   const options = {
     json: false,
 
@@ -167,10 +167,10 @@ module.exports = function protobufJsLoader(source) {
             callback(depErr);
           })
           .then(() => {
-            if(!options.pbts || err) {
+            if (!options.pbts || err) {
               callback(err, result);
             } else {
-              execPBTS(self.resourcePath, result, callback);
+              execPBTS(self.resourcePath, result || '', self, callback);
             }
           });
       });
