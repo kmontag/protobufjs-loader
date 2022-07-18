@@ -35,8 +35,14 @@ const schema = {
 
 /** @type { (this: LoaderContext, source: string) => any } */
 module.exports = function (source) {
-  let callback = this.async();
+  const callback = this.async();
   let self = this;
+
+  // Explicitly check this case, as the typescript compiler thinks
+  // it's possible.
+  if (callback === undefined) {
+    throw new Error('Failed to request async execution from webpack');
+  }
 
   const paths =
     'options' in this
