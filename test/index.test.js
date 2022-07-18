@@ -10,6 +10,8 @@ const compile = require('./helpers/compile');
  * Minifies the given JS string using ugilfy-js, so we can
  * consistently compare generated outputs using relatively compact
  * strings.
+ *
+ * @type { (contents: string) => string }
  */
 function minify(contents) {
   const result = UglifyJS.minify(contents, {
@@ -38,7 +40,7 @@ before(function (done) {
   // background. This can take awhile and trigger a timeout, so we do
   // it here explicitly first.
   this.timeout(10000);
-  compile('basic').then(function (inspect) {
+  compile('basic').then(function (_inspect) {
     done();
   });
 });
@@ -147,7 +149,7 @@ describe('with imports', function () {
       json: true,
       // No include paths provided, so the 'import' fixture should
       // fail to compile.
-    }).catch((err) => {
+    }).catch((_err) => {
       // Nothing to assert, we're just testing that the error happened.
       done();
     });
