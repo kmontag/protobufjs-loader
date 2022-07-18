@@ -1,7 +1,7 @@
 const fs = require('fs');
 const { pbjs, pbts } = require('protobufjs-cli');
 const protobuf = require('protobufjs');
-const tmp = require('tmp-promise');
+const tmp = require('tmp');
 const validateOptions = require('schema-utils').validate;
 
 const { getOptions } = require('loader-utils');
@@ -83,16 +83,23 @@ const execPbts = (resourcePath, pbtsOptions, compiledContent, callback) => {
 
   // pbts CLI only supports streaming from stdin without a lot of
   // duplicated logic, so we need to use a tmp file. :(
-  tmp
-    .file({ postfix: '.js' })
+  new Promise((resolve, reject) => {
+    tmp.file({ postfix: '.js' }, (err, compiledFilename) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(compiledFilename);
+      }
+    });
+  })
     .then(
-      (o) =>
+      (compiledFilename) =>
         new Promise((resolve, reject) => {
-          fs.write(o.fd, compiledContent, (err) => {
+          fs.writeFile(compiledFilename, compiledContent, (err) => {
             if (err) {
               reject(err);
             } else {
-              resolve(o.path);
+              resolve(compiledFilename);
             }
           });
         })
@@ -152,22 +159,28 @@ module.exports = function protobufJsLoader(source) {
     validateOptions(schema, options, { name: 'protobufjs-loader' });
 
     /** @type { string } */
-    let filename;
-    tmp
-      .file()
-      .then((o) => {
-        filename = o.path;
-        return new Promise((resolve, reject) => {
-          fs.write(o.fd, source, (err, bytesWritten) => {
-            if (err) {
-              reject(err);
-            } else {
-              resolve(bytesWritten);
-            }
-          });
-        });
-      })
-      .then(() => {
+    new Promise((resolve, reject) => {
+      tmp.file((err, filename) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(filename);
+        }
+      });
+    })
+      .then(
+        (filename) =>
+          new Promise((resolve, reject) => {
+            fs.writeFile(filename, source, (err) => {
+              if (err) {
+                reject(err);
+              } else {
+                resolve(filename);
+              }
+            });
+          })
+      )
+      .then((filename) => {
         const { paths } = options;
 
         const loadDependencies = new Promise((resolve, reject) => {
