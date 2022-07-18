@@ -1,7 +1,10 @@
 const { assert } = require('chai');
+const fs = require('fs');
 const path = require('path');
+const tmp = require('tmp');
 const UglifyJS = require('uglify-js');
 
+const glob = require('glob');
 const compile = require('./helpers/compile');
 
 /**
@@ -75,6 +78,104 @@ describe('protobufjs-loader', function () {
         const contents = minify(inspect.arguments[0]);
         assert.include(contents, 'foo.Bar=function(){');
         done();
+      });
+    });
+
+    describe('with typescript compilation', function () {
+      beforeEach(function (done) {
+        // Typescript generation requires that we write files directly
+        // when the loader is invoked, rather than passing content
+        // upstream to webpack for later assembly.
+        //
+        // To avoid polluting the local file system with these
+        // compiled definitions, we perform the compilation in a tmp
+        // directory.
+        const fixturesPath = path.resolve(__dirname, 'fixtures');
+        tmp.dir((err, tmpDir, cleanup) => {
+          if (err) {
+            throw err;
+          }
+
+          this.tmpDir = tmpDir;
+          this.cleanup = cleanup;
+
+          glob(path.join(fixturesPath, '*.proto'), (globErr, files) => {
+            if (globErr) {
+              throw globErr;
+            }
+            Promise.all(
+              files.map(
+                (file) =>
+                  new Promise((resolve, reject) => {
+                    fs.copyFile(
+                      file,
+                      path.join(tmpDir, path.basename(file)),
+                      (copyErr) => {
+                        if (copyErr) {
+                          reject(copyErr);
+                        } else {
+                          resolve(undefined);
+                        }
+                      }
+                    );
+                  })
+              )
+            ).then(() => {
+              const target = path.resolve(__dirname, '..', 'node_modules');
+              const link = path.join(tmpDir, 'node_modules');
+              fs.symlink(target, link, (symlinkErr) => {
+                if (symlinkErr) {
+                  throw symlinkErr;
+                }
+                done();
+              });
+            });
+          });
+        });
+      });
+
+      afterEach(function () {
+        if (this.cleanup) {
+          this.cleanup();
+        }
+      });
+
+      it('should not compile typescript by default', function (done) {
+        compile(path.join(this.tmpDir, 'basic')).then(() => {
+          glob(path.join(this.tmpDir, '*.d.ts'), (err, files) => {
+            if (err) {
+              throw err;
+            }
+            assert.equal(0, files.length);
+            done();
+          });
+        });
+      });
+
+      it('should compile typescript', function (done) {
+        compile(path.join(this.tmpDir, 'basic'), { pbts: true })
+          .then(() => {
+            glob(path.join(this.tmpDir, '*.d.ts'), (globErr, files) => {
+              if (globErr) {
+                throw globErr;
+              }
+              const expectedDefinitionsFile = path.join(
+                this.tmpDir,
+                'basic.proto.d.ts'
+              );
+              assert.sameMembers([expectedDefinitionsFile], files);
+
+              fs.readFile(expectedDefinitionsFile, (readErr, content) => {
+                if (readErr) {
+                  throw readErr;
+                }
+                const definitions = content.toString();
+                assert.include(definitions, 'public baz: string;');
+                assert.include(definitions, 'public static decodeDelimited');
+                done();
+              });
+            });
+          });
       });
     });
   });

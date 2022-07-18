@@ -40,6 +40,33 @@ const schema = {
  * @typedef { import('webpack').LoaderContext<never> | import('webpack4').loader.LoaderContext | import('webpack3').loader.LoaderContext | import('webpack2').loader.LoaderContext } LoaderContext
  */
 
+/** @type { (resourcePath: string, compiledContent: string, context: LoaderContext, callback: NonNullable<ReturnType<LoaderContext['async']>>) => any } */
+const execPBTS = (resourcePath, compiledContent, context, callback) => {
+  // pbts CLI only supports streaming from stdin without a lot of
+  // duplicated logic, so we need to use a tmp file. :(
+  tmp
+    .file({ postfix: '.js' })
+    .then(
+      (o) =>
+        new Promise((resolve, reject) => {
+          fs.write(o.fd, compiledContent, (err, bytesWritten, buffer) => {
+            if (err) {
+              reject(err);
+            } else {
+              resolve(o.path);
+            }
+          });
+        })
+    )
+    .then((compiledFilename) => {
+      const declarationFilename = `${resourcePath}.d.ts`;
+      const pbtsArgs = ['-o', declarationFilename, compiledFilename];
+      pbts.main(pbtsArgs, (err) => {
+        callback(err, compiledContent);
+      });
+    });
+};
+
 /** @type { (this: LoaderContext, source: string) => any } */
 module.exports = function protobufJsLoader(source) {
   const callback = this.async();
@@ -176,24 +203,3 @@ module.exports = function protobufJsLoader(source) {
       });
     });
 };
-
-function execPBTS(resourcePath, compiledContent, callback) {
-  // pbts CLI only supports streaming from stdin without a lot of duplicated logic, so we need to use a tmp file. :(
-  tmp.file({postfix: ".js"}).then(function(o) {
-    return new Promise(function(resolve, reject) {
-      fs.write(o.fd, compiledContent, function(err, bytesWritten, buffer) {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(o.path);
-        }
-      });
-    });
-  }).then(function(compiledFilename) {
-    let declarationFilename = resourcePath + ".d.ts";
-    let pbtsArgs = ["-o", declarationFilename, compiledFilename];
-    pbts.main(pbtsArgs, function(err, declarationContent) {
-      callback(err, compiledContent);
-    });
-  });
-}
