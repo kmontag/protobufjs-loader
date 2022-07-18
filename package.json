@@ -16,12 +16,13 @@
   "author": "Kevin Montag <kmontag@cs.stanford.edu>",
   "license": "MIT",
   "dependencies": {
-    "loader-utils": "^1.1.0",
+    "loader-utils": "^2.0.2",
     "protobufjs": "^6.8.0",
     "schema-utils": "^4.0.0",
     "tmp-promise": "^1.0.4"
   },
   "devDependencies": {
+    "@types/loader-utils": "^2.0.3",
     "@types/mocha": "^8.2.3",
     "chai": "^4.1.2",
     "chalk": "^4.1.2",
