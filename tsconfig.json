@@ -2,6 +2,7 @@
   "compilerOptions": {
     "checkJs": true,
     "noEmit": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "strict": true
   }
 }
