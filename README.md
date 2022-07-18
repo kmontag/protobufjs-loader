@@ -45,8 +45,6 @@ module.exports = {
                 paths: ['/path/to/definitions'],
 
                 /* Additional command line arguments passed to pbjs.
-                 * pbjs, see https://github.com/dcodeIO/ProtoBuf.js/#pbjs-for-javascript
-                 * for a list of what's available.
                  *
                  * default: []
                  */
