@@ -5,7 +5,12 @@
   "main": "index.js",
   "scripts": {
     "check": "tsc",
-    "lint": "prettier -c .",
+    "fix:script": "eslint --fix .",
+    "fix:style": "prettier --write .",
+    "fix": "npm run fix:script && npm run fix:style",
+    "lint:script": "eslint .",
+    "lint:style": "prettier -c .",
+    "lint": "npm run lint:script && npm run lint:style",
     "test": "mocha test/*.test.js"
   },
   "keywords": [
