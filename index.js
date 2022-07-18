@@ -49,7 +49,7 @@ const execPBTS = (resourcePath, compiledContent, context, callback) => {
     .then(
       (o) =>
         new Promise((resolve, reject) => {
-          fs.write(o.fd, compiledContent, (err, bytesWritten, buffer) => {
+          fs.write(o.fd, compiledContent, (err) => {
             if (err) {
               reject(err);
             } else {

@@ -87,9 +87,7 @@ module.exports = function compile(fixture, loaderOpts, webpackOpts) {
           // Make sure to test webpack@5 without backwards-compatibility
           // enabled. See
           // https://webpack.js.org/configuration/experiments/#experimentsbackcompat.
-          ...(isWebpack5
-            ? { experiments: { backCompat: false } }
-            : {}),
+          ...(isWebpack5 ? { experiments: { backCompat: false } } : {}),
           ...webpackOpts,
         }
       );

@@ -153,29 +153,28 @@ describe('protobufjs-loader', function () {
       });
 
       it('should compile typescript', function (done) {
-        compile(path.join(this.tmpDir, 'basic'), { pbts: true })
-          .then(() => {
-            glob(path.join(this.tmpDir, '*.d.ts'), (globErr, files) => {
-              if (globErr) {
-                throw globErr;
-              }
-              const expectedDefinitionsFile = path.join(
-                this.tmpDir,
-                'basic.proto.d.ts'
-              );
-              assert.sameMembers([expectedDefinitionsFile], files);
+        compile(path.join(this.tmpDir, 'basic'), { pbts: true }).then(() => {
+          glob(path.join(this.tmpDir, '*.d.ts'), (globErr, files) => {
+            if (globErr) {
+              throw globErr;
+            }
+            const expectedDefinitionsFile = path.join(
+              this.tmpDir,
+              'basic.proto.d.ts'
+            );
+            assert.sameMembers([expectedDefinitionsFile], files);
 
-              fs.readFile(expectedDefinitionsFile, (readErr, content) => {
-                if (readErr) {
-                  throw readErr;
-                }
-                const definitions = content.toString();
-                assert.include(definitions, 'public baz: string;');
-                assert.include(definitions, 'public static decodeDelimited');
-                done();
-              });
+            fs.readFile(expectedDefinitionsFile, (readErr, content) => {
+              if (readErr) {
+                throw readErr;
+              }
+              const definitions = content.toString();
+              assert.include(definitions, 'public baz: string;');
+              assert.include(definitions, 'public static decodeDelimited');
+              done();
             });
           });
+        });
       });
     });
   });
