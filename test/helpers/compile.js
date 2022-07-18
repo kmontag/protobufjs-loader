@@ -8,16 +8,12 @@ const webpack = (function () {
   switch (process.env.WEBPACK_VERSION) {
     case '2':
       return require('webpack2');
-      break;
     case '3':
       return require('webpack3');
-      break;
     case '4':
       return require('webpack4');
-      break;
     default:
       return require('webpack');
-      break;
   }
 })();
 
