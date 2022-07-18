@@ -38,7 +38,7 @@ const schema = {
  */
 
 /** @type { (this: LoaderContext, source: string) => any } */
-module.exports = function (source) {
+module.exports = function protobufJsLoader(source) {
   const callback = this.async();
   const self = this;
 
@@ -48,23 +48,28 @@ module.exports = function (source) {
     throw new Error('Failed to request async execution from webpack');
   }
 
-  const paths =
-    'options' in this
-      ? // For webpack@2 and webpack@3. property loaderContext.options
-        // was deprecated in webpack@3 and removed in webpack@4.
-        (this.options.resolve || {}).modules
-      : // For webpack@4 and webpack@5. The `_compiler` property is
+  const defaultPaths = (() => {
+    if ('options' in this) {
+      // For webpack@2 and webpack@3. property loaderContext.options
+      // was deprecated in webpack@3 and removed in webpack@4.
+      return (this.options.resolve || {}).modules;
+    }
+
+    if (this._compiler) {
+      // For webpack@4 and webpack@5. The `_compiler` property is
       // deprecated, but still works as of webpack@5.
-      this._compiler
-      ? (this._compiler.options.resolve || {}).modules
-      : undefined;
+      return (this._compiler.options.resolve || {}).modules;
+    }
+
+    return undefined;
+  })();
 
   /** @type {{ json: boolean, paths: string[], pbjsArgs: string[] }} */
   const options = {
     json: false,
 
     // Default to the paths given to the compiler.
-    paths: paths || [],
+    paths: defaultPaths || [],
 
     pbjsArgs: [],
     ...getOptions(this),
@@ -78,7 +83,7 @@ module.exports = function (source) {
     .then((o) => {
       filename = o.path;
       return new Promise((resolve, reject) => {
-        fs.write(o.fd, source, (err, bytesWritten, _buffer) => {
+        fs.write(o.fd, source, (err, bytesWritten) => {
           if (err) {
             reject(err);
           } else {
@@ -92,7 +97,7 @@ module.exports = function (source) {
 
       const loadDependencies = new Promise((resolve, reject) => {
         const root = new protobuf.Root();
-        root.resolvePath = function (origin, target) {
+        root.resolvePath = (origin, target) => {
           // Adapted from
           // https://github.com/dcodeIO/protobuf.js/blob/master/cli/pbjs.js
           const normOrigin = protobuf.util.path.normalize(origin);
@@ -119,7 +124,7 @@ module.exports = function (source) {
             return resolved;
           }
 
-          for (let i = 0; i < paths.length; ++i) {
+          for (let i = 0; i < paths.length; i += 1) {
             const iresolved = protobuf.util.path.resolve(
               `${paths[i]}/`,
               target

@@ -9,5 +9,10 @@
     "es6": true,
     "node": true
   },
-  "plugins": ["mocha"]
+  "plugins": ["mocha"],
+  "rules": {
+    "no-underscore-dangle": ["error", {
+      "allowAfterThis": true
+    }]
+  }
 }
