@@ -11,7 +11,7 @@ const compile = require('./helpers/compile');
  *
  * @type { (contents: string) => string }
  */
-function minify(contents) {
+const minify = (contents) => {
   const result = UglifyJS.minify(contents, {
     compress: {
       // This avoids some larger structural changes in the minified
@@ -30,7 +30,7 @@ function minify(contents) {
     throw result.error;
   }
   return result.code;
-}
+};
 
 describe('protobufjs-loader', function () {
   before(function (done) {
@@ -39,7 +39,7 @@ describe('protobufjs-loader', function () {
     // background. This can take awhile and trigger a timeout, so we do
     // it here explicitly first.
     this.timeout(10000);
-    compile('basic').then((_inspect) => {
+    compile('basic').then(() => {
       done();
     });
   });
@@ -162,8 +162,8 @@ describe('protobufjs-loader', function () {
         json: true,
         // No include paths provided, so the 'import' fixture should
         // fail to compile.
-      }).catch((_err) => {
-        // Nothing to assert, we're just testing that the error happened.
+      }).catch((err) => {
+        assert.equal(err, 'compilation error');
         done();
       });
     });
