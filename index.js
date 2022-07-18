@@ -65,11 +65,11 @@ module.exports = function (source) {
     .then(function (o) {
       filename = o.path;
       return new Promise(function (resolve, reject) {
-        fs.write(o.fd, source, function (err, bytesWritten, buffer) {
+        fs.write(o.fd, source, function (err, bytesWritten, _buffer) {
           if (err) {
             reject(err);
           } else {
-            resolve(bytesWritten, buffer);
+            resolve(bytesWritten);
           }
         });
       });
