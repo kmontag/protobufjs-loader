@@ -116,6 +116,8 @@ module.exports = function (source) {
               return iresolved;
             }
           }
+
+          return null;
         };
         protobuf.load(filename, root, function (err, result) {
           if (err) {
