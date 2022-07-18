@@ -26,10 +26,6 @@ const isWebpack5 =
   isWebpack4Plus && (webpack.version || '').substring(0, 2) === '5.';
 
 /**
- * typedef { import('webpack')| import('webpack4').loader.LoaderContext | import('webpack3').loader.LoaderContext | import('webpack2').loader.LoaderContext } LoaderContext
- */
-
-/**
  * The `inspect-loader` passes an object describing its context and
  * the arguments it received. We define a simplified version of that
  * object here. `never` sidesteps writing definitions for stuff we're
