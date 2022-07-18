@@ -158,7 +158,7 @@ describe('protobufjs-loader', function () {
           pbts: true,
         }).catch((compilationErr) => {
           assert.include(
-            '' + compilationErr,
+            `${compilationErr}`,
             'configuration.pbts should be equal to constant false'
           );
           glob(path.join(this.tmpDir, '*.d.ts'), (err, files) => {
@@ -201,7 +201,7 @@ describe('protobufjs-loader', function () {
   describe('with an invalid protobuf file', function () {
     it('should throw a compilation error', function (done) {
       compile('invalid').catch((err) => {
-        assert.include('' + err, "illegal token 'invalid'");
+        assert.include(`${err}`, "illegal token 'invalid'");
         done();
       });
     });
@@ -283,7 +283,7 @@ describe('protobufjs-loader', function () {
         // fail to compile.
       }).catch((err) => {
         assert.include(
-          '' + err,
+          `${err}`,
           "no such Type or Enum 'Bar' in Type .foo.NotBar"
         );
         done();
@@ -297,7 +297,7 @@ describe('protobufjs-loader', function () {
         json: true,
         foo: true,
       }).catch((err) => {
-        assert.include('' + err, "configuration has an unknown property 'foo'");
+        assert.include(`${err}`, "configuration has an unknown property 'foo'");
         done();
       });
     });

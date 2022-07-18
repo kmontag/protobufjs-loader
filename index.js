@@ -131,7 +131,7 @@ module.exports = function protobufJsLoader(source) {
   try {
     validateOptions(schema, options, { name: 'protobufjs-loader' });
   } catch (err) {
-    callback(err instanceof Error ? err : new Error('' + err), undefined);
+    callback(err instanceof Error ? err : new Error(`${err}`), undefined);
     return;
   }
 
