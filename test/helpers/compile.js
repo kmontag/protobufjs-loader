@@ -2,7 +2,8 @@ const MemoryFS = require('memory-fs');
 const path = require('path');
 
 // Allow testing multiple webpack versions.
-const webpack = (function () {
+const webpack = (() => {
+  /* eslint-disable global-require */
   switch (process.env.WEBPACK_VERSION) {
     case '2':
       return require('webpack2');
@@ -13,6 +14,7 @@ const webpack = (function () {
     default:
       return require('webpack');
   }
+  /* eslint-enable global-require */
 })();
 
 const fixturePath = path.resolve(__dirname, '..', 'fixtures');
@@ -33,8 +35,7 @@ const isWebpack5 =
  */
 
 /** @type { (fixture: string, loaderOpts?: object, webpackOpts?: object) => Promise<InspectLoaderResult> } */
-module.exports = function (fixture, loaderOpts, webpackOpts) {
-  webpackOpts = webpackOpts || {};
+module.exports = function compile(fixture, loaderOpts, webpackOpts) {
   return new Promise((resolve, reject) => {
     /** @type { InspectLoaderResult } */
     let inspect;
@@ -101,7 +102,7 @@ module.exports = function (fixture, loaderOpts, webpackOpts) {
     compiler.outputFileSystem = fs;
 
     compiler.run((err, stats) => {
-      const problem = (function () {
+      const problem = (() => {
         if (err) {
           return err;
         }
