@@ -1,12 +1,10 @@
-'use strict';
-
 const fs = require('fs');
-const pbjs = require('protobufjs/cli').pbjs;
+const { pbjs } = require('protobufjs/cli');
 const protobuf = require('protobufjs');
 const tmp = require('tmp-promise');
 const validateOptions = require('schema-utils').validate;
 
-const getOptions = require('loader-utils').getOptions;
+const { getOptions } = require('loader-utils');
 
 /** @type { Parameters<typeof validateOptions>[0] } */
 const schema = {
@@ -40,9 +38,9 @@ const schema = {
  */
 
 /** @type { (this: LoaderContext, source: string) => any } */
-module.exports = function (source) {
+module.exports = function protobufJsLoader(source) {
   const callback = this.async();
-  let self = this;
+  const self = this;
 
   // Explicitly check this case, as the typescript compiler thinks
   // it's possible.
@@ -50,39 +48,42 @@ module.exports = function (source) {
     throw new Error('Failed to request async execution from webpack');
   }
 
-  const paths =
-    'options' in this
-      ? // For webpack@2 and webpack@3. property loaderContext.options
-        // was deprecated in webpack@3 and removed in webpack@4.
-        (this.options.resolve || {}).modules
-      : // For webpack@4 and webpack@5. The `_compiler` property is
+  const defaultPaths = (() => {
+    if ('options' in this) {
+      // For webpack@2 and webpack@3. property loaderContext.options
+      // was deprecated in webpack@3 and removed in webpack@4.
+      return (this.options.resolve || {}).modules;
+    }
+
+    if (this._compiler) {
+      // For webpack@4 and webpack@5. The `_compiler` property is
       // deprecated, but still works as of webpack@5.
-      this._compiler
-      ? (this._compiler.options.resolve || {}).modules
-      : undefined;
+      return (this._compiler.options.resolve || {}).modules;
+    }
+
+    return undefined;
+  })();
 
   /** @type {{ json: boolean, paths: string[], pbjsArgs: string[] }} */
-  const options = Object.assign(
-    {
-      json: false,
+  const options = {
+    json: false,
 
-      // Default to the paths given to the compiler.
-      paths: paths || [],
+    // Default to the paths given to the compiler.
+    paths: defaultPaths || [],
 
-      pbjsArgs: [],
-    },
-    getOptions(this)
-  );
+    pbjsArgs: [],
+    ...getOptions(this),
+  };
   validateOptions(schema, options, { name: 'protobufjs-loader' });
 
   /** @type { string } */
   let filename;
   tmp
     .file()
-    .then(function (o) {
+    .then((o) => {
       filename = o.path;
-      return new Promise(function (resolve, reject) {
-        fs.write(o.fd, source, function (err, bytesWritten, _buffer) {
+      return new Promise((resolve, reject) => {
+        fs.write(o.fd, source, (err, bytesWritten) => {
           if (err) {
             reject(err);
           } else {
@@ -91,25 +92,25 @@ module.exports = function (source) {
         });
       });
     })
-    .then(function () {
-      let paths = options.paths;
+    .then(() => {
+      const { paths } = options;
 
-      let loadDependencies = new Promise(function (resolve, reject) {
-        let root = new protobuf.Root();
-        root.resolvePath = function (origin, target) {
+      const loadDependencies = new Promise((resolve, reject) => {
+        const root = new protobuf.Root();
+        root.resolvePath = (origin, target) => {
           // Adapted from
           // https://github.com/dcodeIO/protobuf.js/blob/master/cli/pbjs.js
-          var normOrigin = protobuf.util.path.normalize(origin),
-            normTarget = protobuf.util.path.normalize(target);
+          const normOrigin = protobuf.util.path.normalize(origin);
+          const normTarget = protobuf.util.path.normalize(target);
 
-          var resolved = protobuf.util.path.resolve(
+          let resolved = protobuf.util.path.resolve(
             normOrigin,
             normTarget,
             true
           );
-          var idx = resolved.lastIndexOf('google/protobuf/');
+          const idx = resolved.lastIndexOf('google/protobuf/');
           if (idx > -1) {
-            var altname = resolved.substring(idx);
+            const altname = resolved.substring(idx);
             if (altname in protobuf.common) {
               resolved = altname;
             }
@@ -123,8 +124,11 @@ module.exports = function (source) {
             return resolved;
           }
 
-          for (var i = 0; i < paths.length; ++i) {
-            var iresolved = protobuf.util.path.resolve(paths[i] + '/', target);
+          for (let i = 0; i < paths.length; i += 1) {
+            const iresolved = protobuf.util.path.resolve(
+              `${paths[i]}/`,
+              target
+            );
             if (fs.existsSync(iresolved)) {
               self.addDependency(iresolved);
               return iresolved;
@@ -133,7 +137,7 @@ module.exports = function (source) {
 
           return null;
         };
-        protobuf.load(filename, root, function (err, result) {
+        protobuf.load(filename, root, (err, result) => {
           if (err) {
             reject(err);
           } else {
@@ -143,20 +147,20 @@ module.exports = function (source) {
       });
 
       let args = options.pbjsArgs;
-      paths.forEach(function (path) {
+      paths.forEach((path) => {
         args = args.concat(['-p', path]);
       });
       args = args
         .concat(['-t', options.json ? 'json-module' : 'static-module'])
         .concat([filename]);
 
-      pbjs.main(args, function (err, result) {
+      pbjs.main(args, (err, result) => {
         // Make sure we've added all dependencies before completing.
         loadDependencies
-          .catch(function (depErr) {
+          .catch((depErr) => {
             callback(depErr);
           })
-          .then(function () {
+          .then(() => {
             callback(err, result);
           });
       });

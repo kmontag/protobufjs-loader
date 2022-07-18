@@ -5,7 +5,12 @@
   "main": "index.js",
   "scripts": {
     "check": "tsc",
-    "lint": "prettier -c .",
+    "fix:script": "eslint --fix .",
+    "fix:style": "prettier --write .",
+    "fix": "npm run fix:script && npm run fix:style",
+    "lint:script": "eslint .",
+    "lint:style": "prettier -c .",
+    "lint": "npm run lint:script && npm run lint:style",
     "test": "mocha test/*.test.js"
   },
   "keywords": [
@@ -33,6 +38,10 @@
     "chai": "^4.1.2",
     "chalk": "^4.1.2",
     "escodegen": "^1.9.0",
+    "eslint": "^8.20.0",
+    "eslint-config-airbnb": "^19.0.4",
+    "eslint-config-prettier": "^8.5.0",
+    "eslint-plugin-mocha": "^10.0.5",
     "espree": "^7.3.1",
     "estraverse": "^5.3.0",
     "glob": "^7.2.3",
