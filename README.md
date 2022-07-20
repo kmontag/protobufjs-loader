@@ -7,7 +7,7 @@ Webpack loader to translate
 [protobuf](https://github.com/google/protobuf/) definitions to
 [ProtoBuf.js](https://github.com/dcodeIO/ProtoBuf.js/)
 modules. Equivalent to running your definitions through the [pbjs
-CLI](https://github.com/dcodeIO/ProtoBuf.js/#pbjs-for-javascript).
+CLI](https://github.com/protobufjs/protobuf.js/tree/master/cli).
 
 This allows you to use the light or minimal ProtoBuf.js distributions
 without an explicit compile step in your build pipeline.
@@ -24,7 +24,7 @@ npm install --save-dev protobufjs-loader
 // webpack.config.js
 
 module.exports = {
-    ...
+    // ...
     module: {
         rules: [{
             test: /\.proto$/,
