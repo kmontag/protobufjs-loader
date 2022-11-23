@@ -206,7 +206,7 @@ module.exports = function protobufJsLoader(source) {
 
             if (fs.existsSync(resolved)) {
               // Don't add a dependency on the temp file
-              if (resolved !== filename) {
+              if (resolved !== protobuf.util.path.normalize(filename)) {
                 self.addDependency(resolved);
               }
               return resolved;
