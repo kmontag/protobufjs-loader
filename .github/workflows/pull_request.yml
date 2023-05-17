@@ -25,10 +25,10 @@ jobs:
       - run: npm ci
       - run: npm run build --if-present
 
-      # For node 18.x, the webpack hashing functions (which get called
-      # separately from this loader during compilation) throw errors
-      # unless we force the legacy SSL provider.
-      - run: ${{ matrix.node-version == '18.x' && 'NODE_OPTIONS=--openssl-legacy-provider ' || '' }}npm test
+      # For node 18 and 20, the webpack4 hashing functions (which get
+      # called separately from this loader during compilation) throw
+      # errors unless we force the legacy SSL provider.
+      - run: ${{ (matrix.webpack-version == '4' && (matrix.node-version == '18.x' || matrix.node-version == '20.x')) && 'NODE_OPTIONS=--openssl-legacy-provider ' || '' }}npm test
 
   validate:
     runs-on: ubuntu-latest
