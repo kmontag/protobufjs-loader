@@ -198,10 +198,19 @@ describe('protobufjs-loader', function () {
                 throw readErr;
               }
               const declarations = content.toString();
-              assert.equal(
-                declarations.trim(),
+              // Make sure the main protobufjs import shows up.
+              assert.include(
+                declarations,
                 'import * as $protobuf from "protobufjs";'
               );
+              // Some versions of protobufjs-cli will also include
+              // additional imports. Make sure all non-empty lines are
+              // imports.
+              for (const line of declarations.split('\n')) {
+                if (line.trim().length !== 0) {
+                  assert.include(line, 'import');
+                }
+              }
               done();
             });
           });
