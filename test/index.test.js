@@ -206,11 +206,11 @@ describe('protobufjs-loader', function () {
               // Some versions of protobufjs-cli will also include
               // additional imports. Make sure all non-empty lines are
               // imports.
-              for (const line of declarations.split('\n')) {
+              declarations.split('\n').forEach((line) => {
                 if (line.trim().length !== 0) {
                   assert.include(line, 'import');
                 }
-              }
+              });
               done();
             });
           });
