@@ -22,6 +22,8 @@ const fixturePath = path.resolve(__dirname, '..', 'fixtures');
 // The config object needs to look slightly different depending on the
 // version of webpack that we're testing with.
 const isWebpack4Plus = 'version' in webpack;
+const isWebpack4 =
+  isWebpack4Plus && (webpack.version || '').substring(0, 2) === '4.';
 const isWebpack5 =
   isWebpack4Plus && (webpack.version || '').substring(0, 2) === '5.';
 
@@ -57,6 +59,12 @@ module.exports = function compile(fixture, loaderOpts, webpackOpts) {
           output: {
             path: '/',
             filename: 'compiled.js',
+            // By default, webpack@4 uses a hash function (md4) which
+            // is not supported by the Node 17+ SSL provider. Set it
+            // explicitly to avoid a compilation error unrelated to
+            // protobufjs. See
+            // https://stackoverflow.com/a/73465262/13264260.
+            ...(isWebpack4 ? { hashFunction: 'md5' } : {}),
           },
           module: {
             rules: [
