@@ -35,7 +35,8 @@ const minify = (contents) => {
   return result.code;
 };
 
-describe(`protobufjs-loader (using webpack ${process.env.WEBPACK_VERSION})`, function () {
+const webpackVersion = process.env.WEBPACK_VERSION;
+describe(`protobufjs-loader with webpack ${webpackVersion}`, function () {
   before(function (done) {
     // The first time the compiler gets run (e.g. in a CI environment),
     // some additional packages will be installed in the

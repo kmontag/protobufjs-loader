@@ -14,7 +14,9 @@ const webpack = (() => {
     case '5':
       return require('webpack');
     default:
-      throw new Error('Please specify a supported webpack version via the WEBPACK_VERSION environment variable.');
+      throw new Error(
+        'Please specify a supported webpack version via the WEBPACK_VERSION environment variable.'
+      );
   }
   /* eslint-enable global-require */
 })();
