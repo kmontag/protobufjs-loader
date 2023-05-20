@@ -11,10 +11,6 @@ jobs:
     strategy:
       matrix:
         node-version: [12.x, 16.x, 18.x, 20.x]
-        webpack-version: [2, 3, 4, 5]
-
-    env:
-      WEBPACK_VERSION: ${{ matrix.webpack-version }}
 
     steps:
       - uses: actions/checkout@v3

@@ -11,7 +11,11 @@
     "lint:script": "eslint .",
     "lint:style": "prettier -c .",
     "lint": "npm run lint:script && npm run lint:style",
-    "test": "mocha test/*.test.js"
+    "test:webpack2": "WEBPACK_VERSION=2 mocha test/*.test.js",
+    "test:webpack3": "WEBPACK_VERSION=3 mocha test/*.test.js",
+    "test:webpack4": "WEBPACK_VERSION=4 mocha test/*.test.js",
+    "test:webpack5": "WEBPACK_VERSION=5 mocha test/*.test.js",
+    "test": "npm run test:webpack2 && npm run test:webpack3 && npm run test:webpack4 && npm run test:webpack5"
   },
   "engines": {
     "node": ">=12.0.0",
