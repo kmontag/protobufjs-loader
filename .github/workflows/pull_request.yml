@@ -11,10 +11,6 @@ jobs:
     strategy:
       matrix:
         node-version: [12.x, 16.x, 18.x, 20.x]
-        webpack-version: [2, 3, 4, 5]
-
-    env:
-      WEBPACK_VERSION: ${{ matrix.webpack-version }}
 
     steps:
       - uses: actions/checkout@v3
@@ -24,11 +20,7 @@ jobs:
           node-version: ${{ matrix.node-version }}
       - run: npm ci
       - run: npm run build --if-present
-
-      # For node 18 and 20, the webpack4 hashing functions (which get
-      # called separately from this loader during compilation) throw
-      # errors unless we force the legacy SSL provider.
-      - run: ${{ (matrix.webpack-version == '4' && (matrix.node-version == '18.x' || matrix.node-version == '20.x')) && 'NODE_OPTIONS=--openssl-legacy-provider ' || '' }}npm test
+      - run: npm test
 
   validate:
     runs-on: ubuntu-latest
