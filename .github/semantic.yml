@@ -1,13 +1,5 @@
-# Config file for https://github.com/Ezard/semantic-prs.
+# Config file for semantic-prs (https://github.com/Ezard/semantic-prs).
 ---
-# PRs will generally be squashed and merged, so we only care about the
-# title for purposes of semantic versioning. This also prevents false
-# positives when some commits use semantic messages, but the PR title
-# does not.
-#
-# Note this means the check will be irrelevant for PRs which are
-# intended to be merged rather than squashed. Merged PRs are useful,
-# for example, if we want to merge several semantic changes all at
-# once (i.e. without multiple releases); to accomplish this, we would
-# use semantic messages on individual commits.
-titleOnly: true
+# PRs will be rebased before being merged. Individual commits need to
+# follow the semantic PR spec.
+commitsOnly: true

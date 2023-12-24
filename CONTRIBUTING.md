@@ -9,20 +9,17 @@ The project uses
 meaning that a new release will be published whenever functional
 changes are pushed to the `master` branch.
 
-To support this, PR titles must follow the [Conventional Commits
-Spec](https://www.conventionalcommits.org/en/v1.0.0/), e.g. `fix: some fix` (for a patch version release) or `feat: some feature` (for a
+Commits must follow the [Conventional Commits
+Spec](https://www.conventionalcommits.org/en/v1.0.0/), e.g. `fix: some
+fix` (for a patch version release) or `feat: some feature` (for a
 minor version release).
-
-(Note that PRs will generally be squashed rather than merged directly,
-so it's the PR title, rather than individual commit messages, which
-must follow this spec.)
 
 ### CI Validations
 
 PRs need to pass the following checks before they can be merged:
 
 ```sh
-npm run check # Validates typings.
+npm run check # Validates types.
 npm run lint  # Validates code style.
 npm run test  # Validates functionality.
 ```
