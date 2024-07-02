@@ -11,21 +11,21 @@
     "lint:script": "eslint .",
     "lint:style": "prettier -c .",
     "lint": "npm run lint:script && npm run lint:style",
-    "test:webpack2": "WEBPACK_VERSION=2 mocha test/*.test.js",
-    "test:webpack3": "WEBPACK_VERSION=3 mocha test/*.test.js",
-    "test:webpack4": "WEBPACK_VERSION=4 mocha test/*.test.js",
-    "test:webpack5": "WEBPACK_VERSION=5 mocha test/*.test.js",
-    "test": "WEBPACK_VERSION=2 mocha test/*.test.js && WEBPACK_VERSION=3 mocha test/*.test.js && WEBPACK_VERSION=4 mocha test/*.test.js && WEBPACK_VERSION=5 mocha test/*.test.js"
+    "test": "mocha test/*.test.js"
   },
   "engines": {
     "node": ">=12.0.0",
     "npm": ">=7.0.0"
   },
-  "keywords": ["webpack", "protobuf", "protobufjs", "ProtoBuf.js"],
+  "keywords": [
+    "webpack",
+    "protobuf",
+    "protobufjs",
+    "ProtoBuf.js"
+  ],
   "author": "Kevin Montag <kmontag@cs.stanford.edu>",
   "license": "MIT",
   "dependencies": {
-    "loader-utils": "^2.0.2",
     "protobufjs": "^7.0.0",
     "protobufjs-cli": "^1.0.0",
     "schema-utils": "^4.0.0",
@@ -38,9 +38,6 @@
     "@types/memory-fs": "^0.3.3",
     "@types/mocha": "^9.1.1",
     "@types/tmp": "^0.2.3",
-    "@types/webpack2": "npm:@types/webpack@^2.0.0",
-    "@types/webpack3": "npm:@types/webpack@^3.0.0",
-    "@types/webpack4": "npm:@types/webpack@^4.0.0",
     "chai": "^4.1.2",
     "eslint": "^8.20.0",
     "eslint-config-airbnb-base": "^15.0.0",
@@ -55,13 +52,10 @@
     "semver": "^7.5.4",
     "typescript": "^4.7.4",
     "uglify-js": "^3.16.2",
-    "webpack": "^5.0.0",
-    "webpack2": "npm:webpack@^2.0.0",
-    "webpack3": "npm:webpack@^3.0.0",
-    "webpack4": "npm:webpack@^4.0.0"
+    "webpack": "^5.0.0"
   },
   "peerDependencies": {
-    "webpack": "^2.0.0 || ^3.0.0 || ^4.0.0 || ^5.0.0"
+    "webpack": "^5.0.0"
   },
   "repository": {
     "type": "git",
