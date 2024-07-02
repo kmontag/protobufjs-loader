@@ -1,33 +1,8 @@
 const MemoryFS = require('memory-fs');
 const path = require('path');
-
-// Allow testing multiple webpack versions.
-const webpack = (() => {
-  /* eslint-disable global-require */
-  switch (process.env.WEBPACK_VERSION) {
-    case '2':
-      return require('webpack2');
-    case '3':
-      return require('webpack3');
-    case '4':
-      return require('webpack4');
-    case '5':
-      return require('webpack');
-    default:
-      throw new Error(
-        'Please specify a supported webpack version via the WEBPACK_VERSION environment variable.'
-      );
-  }
-  /* eslint-enable global-require */
-})();
+const webpack = require('webpack');
 
 const fixturePath = path.resolve(__dirname, '..', 'fixtures');
-
-// The config object needs to look slightly different depending on the
-// version of webpack that we're testing with.
-const isWebpack4Plus = 'version' in webpack;
-const isWebpack5 =
-  isWebpack4Plus && (webpack.version || '').substring(0, 2) === '5.';
 
 /**
  * The `inspect-loader` passes an object describing its context and
@@ -39,34 +14,29 @@ const isWebpack5 =
  */
 
 /**
- * Helper types for each webpack config schema.
- *
- * @typedef { import('webpack2').Configuration } Webpack2Config
- * @typedef { import('webpack3').Configuration } Webpack3Config
- * @typedef { import('webpack4').Configuration } Webpack4Config
- * @typedef { import('webpack').Configuration } Webpack5Config
+ * @typedef { import('webpack').Configuration } WebpackConfig
  */
 
-/** @type { (fixture: string, loaderOpts?: object, webpackOpts?: object) => Promise<{ inspect: InspectLoaderResult }> } */
+/**
+ * @type { (fixture: string, loaderOpts?: object, webpackOpts?: object) => Promise<{ inspect: InspectLoaderResult }> }
+ */
 module.exports = function compile(fixture, loaderOpts, webpackOpts) {
   return new Promise((resolve, reject) => {
     /** @type { InspectLoaderResult } */
     let inspect;
 
-    /**
-     * @type { Webpack2Config | Webpack3Config | Webpack4Config | Webpack5Config }
-     */
+    /** @type { WebpackConfig } */
     const config = {
       entry: path.resolve(fixturePath, `${fixture}.proto`),
       output: {
         path: '/',
         filename: 'compiled.js',
-        // By default, webpack@4 uses a hash function (md4) which
-        // is not supported by the Node 17+ SSL provider. Set it
+        // By default, webpack@4+ uses a hash function (md4) which is
+        // not supported by the Node 17+ SSL provider. Set it
         // explicitly to avoid a compilation error unrelated to
         // protobufjs. See
         // https://stackoverflow.com/a/73465262/13264260.
-        ...(isWebpack4Plus ? { hashFunction: 'md5' } : {}),
+        hashFunction: 'md5',
       },
       module: {
         rules: [
@@ -93,24 +63,15 @@ module.exports = function compile(fixture, loaderOpts, webpackOpts) {
       // webpack@4 adds the `mode` configuration option, which adds some
       // additional config defaults that we want to avoid for
       // consistency.
-      ...(isWebpack4Plus ? { mode: 'none' } : {}),
-      // Make sure to test webpack@5 without backwards-compatibility
+      mode: 'none',
+      // Make sure to test without backwards-compatibility
       // enabled. See
       // https://webpack.js.org/configuration/experiments/#experimentsbackcompat.
-      ...(isWebpack5 ? { experiments: { backCompat: false } } : {}),
+      experiments: { backCompat: false },
       ...webpackOpts,
     };
 
-    /**
-     * @type { ReturnType<typeof webpack> }
-     */
-    const compiler =
-      // The function signatures for different webpack versions aren't
-      // compatible, so the compiler thinks this call is impossible.
-      //
-      // @ts-ignore
-      webpack(config);
-
+    const compiler = webpack(config);
     const fs = new MemoryFS();
 
     // This property is missing from the typings for older webpack

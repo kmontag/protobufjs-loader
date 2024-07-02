@@ -54,6 +54,7 @@ describe(`protobufjs-loader with webpack ${webpackVersion}`, function () {
         target: 'json-module',
       };
     });
+
     it('should compile to a JSON representation', function (done) {
       compile('basic', this.opts).then(({ inspect }) => {
         const contents = minify(inspect.arguments[0]);
@@ -384,7 +385,7 @@ describe(`protobufjs-loader with webpack ${webpackVersion}`, function () {
   });
 
   describe('with invalid options', function () {
-    it('should fail if unreconized properties are added', function (done) {
+    it('should fail if unrecognized properties are added', function (done) {
       compile('basic', {
         target: 'json-module',
         foo: true,

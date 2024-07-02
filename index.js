@@ -4,8 +4,6 @@ const protobuf = require('protobufjs');
 const tmp = require('tmp');
 const validateOptions = require('schema-utils').validate;
 
-const { getOptions } = require('loader-utils');
-
 const TARGET_STATIC_MODULE = 'static-module';
 
 /** @type { Parameters<typeof validateOptions>[0] } */
@@ -60,17 +58,11 @@ const schema = {
  */
 
 /**
- * We're supporting multiple webpack versions, so there are several
- * different possible structures for the `this` context in our loader
- * callback.
+ * The generic parameter is the type of the options object in the
+ * configuration. All `LoaderOptions` fields are optional at this
+ * stage.
  *
- * The `never` generic in the v5 context sets the return type of
- * `getOptions`. Since we're using the deprecated `loader-utils`
- * method of fetching options, this should be fine; however, if we
- * drop support for older webpack versions, we'll want to switch to
- * using `getOptions`.
- *
- * @typedef { import('webpack').LoaderContext<never> | import('webpack4').loader.LoaderContext | import('webpack3').loader.LoaderContext | import('webpack2').loader.LoaderContext } LoaderContext
+ * @typedef { import('webpack').LoaderContext<Partial<LoaderOptions>> } LoaderContext
  */
 
 /** @type { (resourcePath: string, pbtsOptions: true | PbtsOptions, compiledContent: string, callback: NonNullable<ReturnType<LoaderContext['async']>>) => any } */
@@ -128,15 +120,9 @@ module.exports = function protobufJsLoader(source) {
 
   try {
     const defaultPaths = (() => {
-      if ('options' in this) {
-        // For webpack@2 and webpack@3. property loaderContext.options
-        // was deprecated in webpack@3 and removed in webpack@4.
-        return (this.options.resolve || {}).modules;
-      }
-
       if (this._compiler) {
-        // For webpack@4 and webpack@5. The `_compiler` property is
-        // deprecated, but still works as of webpack@5.
+        // The `_compiler` property is deprecated, but still works as
+        // of webpack@5.
         return (this._compiler.options.resolve || {}).modules;
       }
 
@@ -146,15 +132,11 @@ module.exports = function protobufJsLoader(source) {
     /** @type LoaderOptions */
     const options = {
       target: TARGET_STATIC_MODULE,
-
-      // Default to the paths given to the compiler.
+      // Default to the module search paths given to the compiler.
       paths: defaultPaths || [],
-
       pbjsArgs: [],
-
       pbts: false,
-
-      ...getOptions(this),
+      ...this.getOptions(),
     };
     validateOptions(schema, options, { name: 'protobufjs-loader' });
 
