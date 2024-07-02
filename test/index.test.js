@@ -374,10 +374,10 @@ describe(`protobufjs-loader with webpack ${webpackVersion}`, function () {
         // No include paths provided, so the 'import' fixture should
         // fail to compile.
       }).catch((err) => {
-        assert.include(
-          `${err}`,
-          "no such Type or Enum 'Bar' in Type .foo.NotBar"
-        );
+        // The exact error that comes back from protobufjs differs
+        // depending on the package version, so we have to just check
+        // the webpack-specific portion of the error message.
+        assert.include(`${err}`, 'ModuleBuildError: Module build failed');
         done();
       });
     });
