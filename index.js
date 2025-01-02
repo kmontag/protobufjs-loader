@@ -1,4 +1,5 @@
 const fs = require('fs');
+const path = require('path');
 const { pbjs, pbts } = require('protobufjs-cli');
 const protobuf = require('protobufjs');
 const tmp = require('tmp');
@@ -33,6 +34,10 @@ const schema = {
               type: 'array',
               default: [],
             },
+            outDir: {
+              type: 'string',
+              default: ''
+            }
           },
           additionalProperties: false,
         },
@@ -49,7 +54,7 @@ const schema = {
  * properties (i.e. the user-provided object merged with default
  * values).
  *
- * @typedef {{ args: string[] }} PbtsOptions
+ * @typedef {{ args: string[], outDir: string }} PbtsOptions
  * @typedef {{
  *   paths: string[], pbjsArgs: string[],
  *   pbts: boolean | PbtsOptions,
@@ -70,6 +75,7 @@ const execPbts = (resourcePath, pbtsOptions, compiledContent, callback) => {
   /** @type PbtsOptions */
   const normalizedOptions = {
     args: [],
+    outDir: '',
     ...(pbtsOptions === true ? {} : pbtsOptions),
   };
 
@@ -98,7 +104,9 @@ const execPbts = (resourcePath, pbtsOptions, compiledContent, callback) => {
     )
     .then((compiledFilename) => {
       const declarationFilename = `${resourcePath}.d.ts`;
-      const pbtsArgs = ['-o', declarationFilename]
+      const absoluteDeclarationFilename = normalizedOptions.outDir !== '' ?
+        path.join(normalizedOptions.outDir, path.basename(declarationFilename)) : declarationFilename;
+      const pbtsArgs = ['-o', absoluteDeclarationFilename]
         .concat(normalizedOptions.args)
         .concat([compiledFilename]);
       pbts.main(pbtsArgs, (err) => {
