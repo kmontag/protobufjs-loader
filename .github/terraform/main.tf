@@ -70,6 +70,11 @@ locals {
   # block can simply be commented out temporarily.
   main_ruleset_name = "master"
   main_ruleset_id   = one([for ruleset in local.rulesets : ruleset.id if ruleset.name == local.main_ruleset_name])
+
+  # Get the node versions for the GH build job, so we can use them to
+  # specify required workflows.
+  pull_request_workflow = yamldecode(file("${path.module}/../workflows/pull_request.yml"))
+  build_node_versions   = local.pull_request_workflow.jobs.build.strategy.matrix["node-version"]
 }
 
 resource "github_repository_ruleset" "master" {
@@ -115,6 +120,22 @@ resource "github_repository_ruleset" "master" {
 
     # Prevent force-pushes to the default branch.
     non_fast_forward = true
+
+    required_status_checks {
+      # Require status checks to pass with the latest code.
+      strict_required_status_checks_policy = true
+
+      required_check {
+        context = "validate"
+      }
+
+      dynamic "required_check" {
+        for_each = local.build_node_versions
+        content {
+          context = "build (${required_check.value})"
+        }
+      }
+    }
   }
 }
 
@@ -126,6 +147,6 @@ import {
 }
 
 import {
-  to = github_repository_ruleset.main
+  to = github_repository_ruleset.master
   id = "${github_repository.default.name}:${local.main_ruleset_id}"
 }
