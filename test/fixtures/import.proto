@@ -3,6 +3,7 @@ syntax = "proto3";
 package foo;
 
 import "basic.proto";
+import "sub/baz.proto";
 
 message NotBar {
   Bar bar = 1;

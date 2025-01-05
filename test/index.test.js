@@ -35,8 +35,7 @@ const minify = (contents) => {
   return result.code;
 };
 
-const webpackVersion = process.env.WEBPACK_VERSION;
-describe(`protobufjs-loader with webpack ${webpackVersion}`, function () {
+describe('protobufjs-loader', function () {
   before(function (done) {
     // The first time the compiler gets run (e.g. in a CI environment),
     // some additional packages will be installed in the
@@ -101,27 +100,38 @@ describe(`protobufjs-loader with webpack ${webpackVersion}`, function () {
           this.tmpDir = tmpDir;
           this.cleanup = cleanup;
 
-          glob(path.join(fixturesPath, '*.proto'), (globErr, files) => {
+          glob(path.join(fixturesPath, '**', '*.proto'), (globErr, files) => {
             if (globErr) {
               throw globErr;
             }
             Promise.all(
-              files.map(
-                (file) =>
-                  new Promise((resolve, reject) => {
-                    fs.copyFile(
-                      file,
-                      path.join(tmpDir, path.basename(file)),
-                      (copyErr) => {
-                        if (copyErr) {
-                          reject(copyErr);
-                        } else {
-                          resolve(undefined);
-                        }
+              files.map((file) => {
+                const targetPath = path.join(
+                  tmpDir,
+                  path.relative(fixturesPath, file)
+                );
+
+                return new Promise((resolve, reject) => {
+                  // Create subdirectories if necessary.
+                  fs.mkdir(
+                    path.dirname(targetPath),
+                    { recursive: true },
+                    (mkdirErr) => {
+                      if (mkdirErr) {
+                        reject(mkdirErr);
+                      } else {
+                        fs.copyFile(file, targetPath, (copyErr) => {
+                          if (copyErr) {
+                            reject(copyErr);
+                          } else {
+                            resolve(undefined);
+                          }
+                        });
                       }
-                    );
-                  })
-              )
+                    }
+                  );
+                });
+              })
             ).then(() => {
               const target = path.resolve(__dirname, '..', 'node_modules');
               const link = path.join(tmpDir, 'node_modules');
@@ -156,6 +166,8 @@ describe(`protobufjs-loader with webpack ${webpackVersion}`, function () {
 
       it('should compile typescript when enabled', function (done) {
         compile(path.join(this.tmpDir, 'basic'), { pbts: true }).then(() => {
+          // By default, definitions should just be siblings of their
+          // associated .proto file.
           glob(path.join(this.tmpDir, '*.d.ts'), (globErr, files) => {
             if (globErr) {
               throw globErr;
@@ -255,7 +267,7 @@ describe(`protobufjs-loader with webpack ${webpackVersion}`, function () {
             paths: [this.tmpDir],
             pbts: true,
           }).then(() => {
-            glob(path.join(this.tmpDir, '*.d.ts'), (globErr, files) => {
+            glob(path.join(this.tmpDir, '**', '*.d.ts'), (globErr, files) => {
               if (globErr) {
                 throw globErr;
               }
@@ -278,9 +290,14 @@ describe(`protobufjs-loader with webpack ${webpackVersion}`, function () {
                   'class NotBar implements INotBar {'
                 );
 
-                // Check that delcarations from the imported `basic`
+                // Check that declarations from the imported `basic`
                 // fixture are present.
                 assert.include(declarations, 'class Bar implements IBar');
+
+                // Check that declarations imported from the
+                // subdirectory are present.
+                assert.include(declarations, 'class Baz implements IBaz');
+                assert.include(declarations, 'namespace sub');
 
                 done();
               });
@@ -318,7 +335,7 @@ describe(`protobufjs-loader with webpack ${webpackVersion}`, function () {
   describe('with imports', function () {
     beforeEach(function () {
       this.innerString =
-        'addJSON({foo:{nested:{NotBar:{fields:{bar:{type:"Bar",id:1}}},Bar:{fields:{baz:{type:"string",id:1}}}}}})})';
+        '.addJSON({foo:{nested:{NotBar:{fields:{bar:{type:"Bar",id:1}}},Bar:{fields:{baz:{type:"string",id:1}}},sub:{nested:{Baz:{fields:{id:{type:"int32",id:1}}}}}}}})});';
     });
 
     it('should respect the webpack paths configuration', function (done) {
