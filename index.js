@@ -1,5 +1,4 @@
 const fs = require('fs');
-const path = require('path');
 const { pbjs, pbts } = require('protobufjs-cli');
 const protobuf = require('protobufjs');
 const tmp = require('tmp');
@@ -34,10 +33,10 @@ const schema = {
               type: 'array',
               default: [],
             },
-            outDir: {
-              type: 'string',
-              default: ''
-            }
+            output: {
+              anyOf: [{ type: 'null' }, { instanceof: 'Function' }],
+              default: null,
+            },
           },
           additionalProperties: false,
         },
@@ -54,7 +53,7 @@ const schema = {
  * properties (i.e. the user-provided object merged with default
  * values).
  *
- * @typedef {{ args: string[], outDir: string }} PbtsOptions
+ * @typedef {{ args: string[], output: ((resourcePath: string) => string | Promise<string>) | null }} PbtsOptions
  * @typedef {{
  *   paths: string[], pbjsArgs: string[],
  *   pbts: boolean | PbtsOptions,
@@ -72,25 +71,26 @@ const schema = {
 
 /** @type { (resourcePath: string, pbtsOptions: true | PbtsOptions, compiledContent: string, callback: NonNullable<ReturnType<LoaderContext['async']>>) => any } */
 const execPbts = (resourcePath, pbtsOptions, compiledContent, callback) => {
-  /** @type PbtsOptions */
-  const normalizedOptions = {
-    args: [],
-    outDir: '',
-    ...(pbtsOptions === true ? {} : pbtsOptions),
-  };
+  try {
+    /** @type PbtsOptions */
+    const normalizedOptions = {
+      args: [],
+      output: null,
+      ...(pbtsOptions === true ? {} : pbtsOptions),
+    };
 
-  // pbts CLI only supports streaming from stdin without a lot of
-  // duplicated logic, so we need to use a tmp file. :(
-  new Promise((resolve, reject) => {
-    tmp.file({ postfix: '.js' }, (err, compiledFilename) => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve(compiledFilename);
-      }
-    });
-  })
-    .then(
+    // pbts CLI only supports streaming from stdin without a lot of
+    // duplicated logic, so we need to use a tmp file. :(
+    /** @type Promise<string> */
+    const compiledFilenamePromise = new Promise((resolve, reject) => {
+      tmp.file({ postfix: '.js' }, (err, compiledFilename) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(compiledFilename);
+        }
+      });
+    }).then(
       (compiledFilename) =>
         new Promise((resolve, reject) => {
           fs.writeFile(compiledFilename, compiledContent, (err) => {
@@ -101,18 +101,29 @@ const execPbts = (resourcePath, pbtsOptions, compiledContent, callback) => {
             }
           });
         })
-    )
-    .then((compiledFilename) => {
-      const declarationFilename = `${resourcePath}.d.ts`;
-      const absoluteDeclarationFilename = normalizedOptions.outDir !== '' ?
-        path.join(normalizedOptions.outDir, path.basename(declarationFilename)) : declarationFilename;
-      const pbtsArgs = ['-o', absoluteDeclarationFilename]
-        .concat(normalizedOptions.args)
-        .concat([compiledFilename]);
-      pbts.main(pbtsArgs, (err) => {
-        callback(err, compiledContent);
+    );
+    /** @type { (resourcePath: string) => string | Promise<string> } */
+    const output =
+      normalizedOptions.output === null
+        ? (r) => `${r}.d.ts`
+        : normalizedOptions.output;
+    const declarationFilenamePromise = Promise.resolve(output(resourcePath));
+
+    Promise.all([compiledFilenamePromise, declarationFilenamePromise])
+      .then(([compiledFilename, declarationFilename]) => {
+        const pbtsArgs = ['-o', declarationFilename]
+          .concat(normalizedOptions.args)
+          .concat([compiledFilename]);
+        pbts.main(pbtsArgs, (err) => {
+          callback(err, compiledContent);
+        });
+      })
+      .catch((err) => {
+        callback(err, undefined);
       });
-    });
+  } catch (err) {
+    callback(err instanceof Error ? err : new Error(`${err}`), undefined);
+  }
 };
 
 /** @type { (this: LoaderContext, source: string) => any } */

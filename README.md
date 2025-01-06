@@ -48,8 +48,8 @@ module.exports = {
             /* Enable Typescript declaration file generation via pbts.
              *
              * Declaration files will be written every time the loader runs.
-             * They'll be saved in the same directory as the protobuf file
-             * being processed, with a `.d.ts` extension.
+             * By default, they'll be saved in the same directory as the
+             * protobuf file being processed, with a `.d.ts` extension.
              *
              * This only works if you're using the 'static-module' target
              * for pbjs (i.e. the default target).
@@ -63,6 +63,24 @@ module.exports = {
               /* Additional command line arguments passed to pbts.
                */
               args: ['--no-comments'],
+
+              /* Optional function which receives the path to a protobuf file,
+               * and returns the output path (or a promise resolving to the
+               * output path) for the associated Typescript declaration file.
+               *
+               * If this is null (i.e. by default), declaration files will be
+               * saved to `${protobufFile}.d.ts`.
+               *
+               * The loader won't create any directories on the filesystem. If
+               * writing to a nonstandard location, you should ensure that it
+               * exists and is writable.
+               *
+               * default: null
+               */
+              output: (protobufFile) =>
+                `/custom/location/${require('path').basename(
+                  protobufFile
+                )}.d.ts`,
             },
 
             /* Set the "target" flag to pbjs.
