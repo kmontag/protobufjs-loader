@@ -49,7 +49,8 @@ module.exports = {
              *
              * Declaration files will be written every time the loader runs.
              * By default, they'll be saved in the same directory as the
-             * protobuf file being processed, with a `.d.ts` extension.
+             * protobuf file being processed, using the same filename with a
+             * `.d.ts` extension.
              *
              * This only works if you're using the 'static-module' target
              * for pbjs (i.e. the default target).
