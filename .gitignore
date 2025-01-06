@@ -1,6 +1,6 @@
 /node_modules/
 
 # Terraform local data and transient state.
-/.github/terraform/.terraform
+/.github/terraform/.terraform/
 /.github/terraform/terraform.tfstate
 /.github/terraform/terraform.tfstate.backup

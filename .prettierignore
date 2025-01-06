@@ -1,3 +1,6 @@
 /node_modules/
 /package.json
 /package-lock.json
+
+/.github/terraform/.terraform/
+/.github/terraform/*.tfstate*
