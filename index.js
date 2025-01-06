@@ -66,7 +66,7 @@ const schema = {
  */
 
 /** @type { (resourcePath: string, pbtsOptions: true | PbtsOptions, compiledContent: string | undefined) => Promise<void> } */
-const execPbts = (resourcePath, pbtsOptions, compiledContent) => {
+const execPbts = async (resourcePath, pbtsOptions, compiledContent) => {
   /** @type PbtsOptions */
   const normalizedOptions = {
     args: [],
@@ -75,7 +75,7 @@ const execPbts = (resourcePath, pbtsOptions, compiledContent) => {
 
   // pbts CLI only supports streaming from stdin without a lot of
   // duplicated logic, so we need to use a tmp file. :(
-  return new Promise((resolve, reject) => {
+  const compiledFilename = await new Promise((resolve, reject) => {
     tmp.file({ postfix: '.js' }, (err, compiledFilename) => {
       if (err) {
         reject(err);
@@ -83,39 +83,40 @@ const execPbts = (resourcePath, pbtsOptions, compiledContent) => {
         resolve(compiledFilename);
       }
     });
-  })
-    .then(
-      (compiledFilename) =>
-        new Promise((resolve, reject) => {
-          fs.writeFile(compiledFilename, compiledContent || '', (err) => {
-            if (err) {
-              reject(err);
-            } else {
-              resolve(compiledFilename);
-            }
-          });
-        })
-    )
-    .then((compiledFilename) => {
-      const declarationFilename = `${resourcePath}.d.ts`;
-      const pbtsArgs = ['-o', declarationFilename]
-        .concat(normalizedOptions.args)
-        .concat([compiledFilename]);
-      return new Promise((resolve, reject) => {
-        pbts.main(pbtsArgs, (err) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve();
-          }
-        });
-      });
+  });
+
+  // Write the compiled JS content to the tmp file.
+  await new Promise((resolve, reject) => {
+    fs.writeFile(compiledFilename, compiledContent || '', (err) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(compiledFilename);
+      }
     });
+  });
+
+  const declarationFilename = `${resourcePath}.d.ts`;
+  const pbtsArgs = ['-o', declarationFilename]
+    .concat(normalizedOptions.args)
+    .concat([compiledFilename]);
+
+  /** @type { Promise<void> } */
+  const pbtsPromise = new Promise((resolve, reject) => {
+    pbts.main(pbtsArgs, (err) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve();
+      }
+    });
+  });
+  await pbtsPromise;
 };
 
 /**
  * Main loader invocation. Return the pbjs-transformed content of a
- * protobuf source.
+ * protobuf source, and write typescript declarations if appropriate.
  *
  * @type { (source: string, context: LoaderContext) => Promise<string | undefined> }
  */
