@@ -35,16 +35,31 @@ const minify = (contents) => {
   return result.code;
 };
 
+/**
+ * Promisified glob function for convenience.
+ *
+ * @type { (globStr: string) => Promise<string[]> }
+ */
+const globPromise = (globStr) => {
+  return new Promise((resolve, reject) => {
+    glob(globStr, (err, files) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(files);
+      }
+    });
+  });
+};
+
 describe('protobufjs-loader', function () {
-  before(function (done) {
+  before(async function () {
     // The first time the compiler gets run (e.g. in a CI environment),
     // some additional packages will be installed in the
     // background. This can take awhile and trigger a timeout, so we do
     // it here explicitly first.
     this.timeout(10000);
-    compile('basic').then(() => {
-      done();
-    });
+    await compile('basic');
   });
 
   describe('with JSON / reflection', function () {
@@ -54,36 +69,30 @@ describe('protobufjs-loader', function () {
       };
     });
 
-    it('should compile to a JSON representation', function (done) {
-      compile('basic', this.opts).then(({ inspect }) => {
-        const contents = minify(inspect.arguments[0]);
-        const innerString =
-          'addJSON({foo:{nested:{Bar:{fields:{baz:{type:"string",id:1}}}}}})})';
-        assert.include(contents, innerString);
-        done();
-      });
+    it('should compile to a JSON representation', async function () {
+      const { inspect } = await compile('basic', this.opts);
+      const contents = minify(inspect.arguments[0]);
+      const innerString =
+        'addJSON({foo:{nested:{Bar:{fields:{baz:{type:"string",id:1}}}}}})})';
+      assert.include(contents, innerString);
     });
   });
 
   describe('with static code', function () {
-    it('should compile static code by default', function (done) {
-      compile('basic').then(({ inspect }) => {
-        const contents = minify(inspect.arguments[0]);
-        assert.include(contents, 'foo.Bar=function(){');
-        done();
-      });
+    it('should compile static code by default', async function () {
+      const { inspect } = await compile('basic');
+      const contents = minify(inspect.arguments[0]);
+      assert.include(contents, 'foo.Bar=function(){');
     });
 
-    it('should compile static code when the option is set explicitly', function (done) {
-      compile('basic', { target: 'static-module' }).then(({ inspect }) => {
-        const contents = minify(inspect.arguments[0]);
-        assert.include(contents, 'foo.Bar=function(){');
-        done();
-      });
+    it('should compile static code when the option is set explicitly', async function () {
+      const { inspect } = await compile('basic', { target: 'static-module' });
+      const contents = minify(inspect.arguments[0]);
+      assert.include(contents, 'foo.Bar=function(){');
     });
 
     describe('with typescript compilation', function () {
-      beforeEach(function (done) {
+      beforeEach(async function () {
         // Typescript generation requires that we write files directly
         // when the loader is invoked, rather than passing content
         // upstream to webpack for later assembly.
@@ -92,58 +101,67 @@ describe('protobufjs-loader', function () {
         // compiled definitions, we perform the compilation in a tmp
         // directory.
         const fixturesPath = path.resolve(__dirname, 'fixtures');
-        tmp.dir((err, tmpDir, cleanup) => {
-          if (err) {
-            throw err;
-          }
-
-          this.tmpDir = tmpDir;
-          this.cleanup = cleanup;
-
-          glob(path.join(fixturesPath, '**', '*.proto'), (globErr, files) => {
-            if (globErr) {
-              throw globErr;
+        const [tmpDir, cleanup] = await new Promise((resolve, reject) => {
+          tmp.dir((err, tmpDir, cleanup) => {
+            if (err) {
+              reject(err);
+            } else {
+              resolve([tmpDir, cleanup]);
             }
-            Promise.all(
-              files.map((file) => {
-                const targetPath = path.join(
-                  tmpDir,
-                  path.relative(fixturesPath, file)
-                );
-
-                return new Promise((resolve, reject) => {
-                  // Create subdirectories if necessary.
-                  fs.mkdir(
-                    path.dirname(targetPath),
-                    { recursive: true },
-                    (mkdirErr) => {
-                      if (mkdirErr) {
-                        reject(mkdirErr);
-                      } else {
-                        fs.copyFile(file, targetPath, (copyErr) => {
-                          if (copyErr) {
-                            reject(copyErr);
-                          } else {
-                            resolve(undefined);
-                          }
-                        });
-                      }
-                    }
-                  );
-                });
-              })
-            ).then(() => {
-              const target = path.resolve(__dirname, '..', 'node_modules');
-              const link = path.join(tmpDir, 'node_modules');
-              fs.symlink(target, link, (symlinkErr) => {
-                if (symlinkErr) {
-                  throw symlinkErr;
-                }
-                done();
-              });
-            });
           });
         });
+
+        this.tmpDir = tmpDir;
+        this.cleanup = cleanup;
+
+        const files = await globPromise(
+          path.join(fixturesPath, '**', '*.proto')
+        );
+
+        await Promise.all(
+          files.map((file) => {
+            const targetPath = path.join(
+              tmpDir,
+              path.relative(fixturesPath, file)
+            );
+
+            return new Promise((resolve, reject) => {
+              // Create subdirectories if necessary.
+              fs.mkdir(
+                path.dirname(targetPath),
+                { recursive: true },
+                (mkdirErr) => {
+                  if (mkdirErr) {
+                    reject(mkdirErr);
+                  } else {
+                    fs.copyFile(file, targetPath, (copyErr) => {
+                      if (copyErr) {
+                        reject(copyErr);
+                      } else {
+                        resolve(undefined);
+                      }
+                    });
+                  }
+                }
+              );
+            });
+          })
+        );
+        const target = path.resolve(__dirname, '..', 'node_modules');
+        const link = path.join(tmpDir, 'node_modules');
+
+        /** @type { Promise<void> } */
+        const symlinkNodeModulesPromise = new Promise((resolve, reject) => {
+          fs.symlink(target, link, (symlinkErr) => {
+            if (symlinkErr) {
+              reject(symlinkErr);
+            } else {
+              resolve();
+            }
+          });
+        });
+
+        await symlinkNodeModulesPromise;
       });
 
       afterEach(function () {
@@ -152,43 +170,36 @@ describe('protobufjs-loader', function () {
         }
       });
 
-      it('should not compile typescript by default', function (done) {
-        compile(path.join(this.tmpDir, 'basic')).then(() => {
-          glob(path.join(this.tmpDir, '*.d.ts'), (err, files) => {
-            if (err) {
-              throw err;
-            }
-            assert.equal(0, files.length);
-            done();
-          });
-        });
+      it('should not compile typescript by default', async function () {
+        await compile(path.join(this.tmpDir, 'basic'));
+        const files = await globPromise(path.join(this.tmpDir, '*.d.ts'));
+        assert.equal(0, files.length);
       });
 
-      it('should compile typescript when enabled', function (done) {
-        compile(path.join(this.tmpDir, 'basic'), { pbts: true }).then(() => {
-          // By default, definitions should just be siblings of their
-          // associated .proto file.
-          glob(path.join(this.tmpDir, '*.d.ts'), (globErr, files) => {
-            if (globErr) {
-              throw globErr;
-            }
-            const expectedDefinitionsFile = path.join(
-              this.tmpDir,
-              'basic.proto.d.ts'
-            );
-            assert.sameMembers([expectedDefinitionsFile], files);
+      it('should compile typescript when enabled', async function () {
+        await compile(path.join(this.tmpDir, 'basic'), { pbts: true });
+        // By default, definitions should just be siblings of their
+        // associated .proto file.
+        const files = await globPromise(path.join(this.tmpDir, '*.d.ts'));
+        const expectedDefinitionsFile = path.join(
+          this.tmpDir,
+          'basic.proto.d.ts'
+        );
+        assert.sameMembers([expectedDefinitionsFile], files);
 
-            fs.readFile(expectedDefinitionsFile, (readErr, content) => {
-              if (readErr) {
-                throw readErr;
-              }
-              const declarations = content.toString();
-              assert.include(declarations, 'public baz: string;');
-              assert.include(declarations, 'public static decodeDelimited');
-              done();
-            });
+        /** @type { string } */
+        const declarations = await new Promise((resolve, reject) => {
+          fs.readFile(expectedDefinitionsFile, (readErr, content) => {
+            if (readErr) {
+              reject(readErr);
+            } else {
+              resolve(content.toString());
+            }
           });
         });
+
+        assert.include(declarations, 'public baz: string;');
+        assert.include(declarations, 'public static decodeDelimited');
       });
 
       it('should compile nearly-empty declarations if typescript compilation is enabled for JSON output', function (done) {
