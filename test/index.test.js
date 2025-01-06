@@ -202,74 +202,70 @@ describe('protobufjs-loader', function () {
         assert.include(declarations, 'public static decodeDelimited');
       });
 
-      it('should compile nearly-empty declarations if typescript compilation is enabled for JSON output', function (done) {
-        compile(path.join(this.tmpDir, 'basic'), {
+      it('should compile nearly-empty declarations if typescript compilation is enabled for JSON output', async function () {
+        await compile(path.join(this.tmpDir, 'basic'), {
           target: 'json-module',
           pbts: true,
-        }).then(() => {
-          glob(path.join(this.tmpDir, '*.d.ts'), (err, files) => {
-            if (err) {
-              throw err;
+        });
+        const files = await globPromise(path.join(this.tmpDir, '*.d.ts'));
+
+        const expectedDefinitionsFile = path.join(
+          this.tmpDir,
+          'basic.proto.d.ts'
+        );
+        assert.sameMembers([expectedDefinitionsFile], files);
+
+        /** @type { string } */
+        const declarations = await new Promise((resolve, reject) => {
+          fs.readFile(expectedDefinitionsFile, (readErr, content) => {
+            if (readErr) {
+              reject(readErr);
+            } else {
+              resolve(content.toString());
             }
-
-            const expectedDefinitionsFile = path.join(
-              this.tmpDir,
-              'basic.proto.d.ts'
-            );
-            assert.sameMembers([expectedDefinitionsFile], files);
-
-            fs.readFile(expectedDefinitionsFile, (readErr, content) => {
-              if (readErr) {
-                throw readErr;
-              }
-              const declarations = content.toString();
-              // Make sure the main protobufjs import shows up.
-              assert.include(
-                declarations,
-                'import * as $protobuf from "protobufjs";'
-              );
-              // Some versions of protobufjs-cli will also include
-              // additional imports. Make sure all non-empty lines are
-              // imports.
-              declarations.split('\n').forEach((line) => {
-                if (line.trim().length !== 0) {
-                  assert.include(line, 'import');
-                }
-              });
-              done();
-            });
           });
+        });
+
+        // Make sure the main protobufjs import shows up.
+        assert.include(
+          declarations,
+          'import * as $protobuf from "protobufjs";'
+        );
+        // Some versions of protobufjs-cli will also include
+        // additional imports. Make sure all non-empty lines are
+        // imports.
+        declarations.split('\n').forEach((line) => {
+          if (line.trim().length !== 0) {
+            assert.include(line, 'import');
+          }
         });
       });
 
-      it('should pass arguments to pbts', function (done) {
-        compile(path.join(this.tmpDir, 'basic'), {
+      it('should pass arguments to pbts', async function () {
+        await compile(path.join(this.tmpDir, 'basic'), {
           pbts: {
             args: ['-n', 'testModuleName'],
           },
-        }).then(() => {
-          glob(path.join(this.tmpDir, '*.d.ts'), (globErr, files) => {
-            if (globErr) {
-              throw globErr;
-            }
-            const expectedDeclarationFile = path.join(
-              this.tmpDir,
-              'basic.proto.d.ts'
-            );
-            assert.sameMembers([expectedDeclarationFile], files);
+        });
+        const files = await globPromise(path.join(this.tmpDir, '*.d.ts'));
+        const expectedDeclarationFile = path.join(
+          this.tmpDir,
+          'basic.proto.d.ts'
+        );
+        assert.sameMembers([expectedDeclarationFile], files);
 
-            fs.readFile(expectedDeclarationFile, (readErr, content) => {
-              if (readErr) {
-                throw readErr;
-              }
-              const declarations = content.toString();
-              assert.include(declarations, 'public baz: string;');
-              assert.include(declarations, 'public static decodeDelimited');
-              assert.include(declarations, 'declare namespace testModuleName');
-              done();
-            });
+        const declarations = await new Promise((resolve, reject) => {
+          fs.readFile(expectedDeclarationFile, (readErr, content) => {
+            if (readErr) {
+              reject(readErr);
+            } else {
+              resolve(content.toString());
+            }
           });
         });
+        assert.include(declarations, 'public baz: string;');
+        assert.include(declarations, 'public static decodeDelimited');
+        assert.include(declarations, 'declare namespace testModuleName');
       });
 
       describe('with imports', function () {
