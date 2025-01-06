@@ -273,73 +273,71 @@ describe('protobufjs-loader', function () {
       });
 
       describe('with imports', function () {
-        it('should compile imported definitions', function (done) {
-          compile(path.join(this.tmpDir, 'import'), {
+        it('should compile imported definitions', async function () {
+          await compile(path.join(this.tmpDir, 'import'), {
             paths: [this.tmpDir],
             pbts: true,
-          }).then(() => {
-            glob(path.join(this.tmpDir, '**', '*.d.ts'), (globErr, files) => {
-              if (globErr) {
-                throw globErr;
+          });
+          const files = await globPromise(
+            path.join(this.tmpDir, '**', '*.d.ts')
+          );
+          const expectedDeclarationFile = path.join(
+            this.tmpDir,
+            'import.proto.d.ts'
+          );
+          assert.sameMembers([expectedDeclarationFile], files);
+
+          /** @type { string } */
+          const declarations = await new Promise((resolve, reject) => {
+            fs.readFile(expectedDeclarationFile, (readErr, content) => {
+              if (readErr) {
+                reject(readErr);
+              } else {
+                resolve(content.toString());
               }
-              const expectedDeclarationFile = path.join(
-                this.tmpDir,
-                'import.proto.d.ts'
-              );
-              assert.sameMembers([expectedDeclarationFile], files);
-
-              fs.readFile(expectedDeclarationFile, (readErr, content) => {
-                if (readErr) {
-                  throw readErr;
-                }
-                const declarations = content.toString();
-
-                // Check that declarations from the top-level `import`
-                // fixture are present.
-                assert.include(
-                  declarations,
-                  'class NotBar implements INotBar {'
-                );
-
-                // Check that declarations from the imported `basic`
-                // fixture are present.
-                assert.include(declarations, 'class Bar implements IBar');
-
-                // Check that declarations imported from the
-                // subdirectory are present.
-                assert.include(declarations, 'class Baz implements IBaz');
-                assert.include(declarations, 'namespace sub');
-
-                done();
-              });
             });
           });
+
+          // Check that declarations from the top-level `import`
+          // fixture are present.
+          assert.include(declarations, 'class NotBar implements INotBar {');
+
+          // Check that declarations from the imported `basic`
+          // fixture are present.
+          assert.include(declarations, 'class Bar implements IBar');
+
+          // Check that declarations imported from the
+          // subdirectory are present.
+          assert.include(declarations, 'class Baz implements IBaz');
+          assert.include(declarations, 'namespace sub');
         });
       });
     });
   });
 
   describe('with an invalid protobuf file', function () {
-    it('should throw a compilation error', function (done) {
-      compile('invalid').catch((err) => {
+    it('should throw a compilation error', async function () {
+      let didError = false;
+      try {
+        await compile('invalid');
+      } catch (err) {
+        didError = true;
         assert.include(`${err}`, "illegal token 'invalid'");
-        done();
-      });
+      }
+      assert.isTrue(didError);
     });
   });
 
   describe('with command line options', function () {
-    it('should pass command line options to the pbjs call', function (done) {
-      compile('basic', { pbjsArgs: ['--no-encode'] }).then(({ inspect }) => {
-        const contents = minify(inspect.arguments[0]);
+    it('should pass command line options to the pbjs call', async function () {
+      const { inspect } = await compile('basic', { pbjsArgs: ['--no-encode'] });
+      const contents = minify(inspect.arguments[0]);
 
-        // Sanity check
-        const innerString = 'Bar.decode=function decode(reader,length)';
-        assert.include(contents, innerString);
+      // Sanity check
+      const innerString = 'Bar.decode=function decode(reader,length)';
+      assert.include(contents, innerString);
 
-        assert.notInclude(contents, 'encode');
-        done();
-      });
+      assert.notInclude(contents, 'encode');
     });
   });
 
