@@ -349,9 +349,9 @@ describe('protobufjs-loader', function () {
         '.addJSON({foo:{nested:{NotBar:{fields:{bar:{type:"Bar",id:1}}},Bar:{fields:{baz:{type:"string",id:1}}},sub:{nested:{Baz:{fields:{id:{type:"int32",id:1}}}}}}}})});';
     });
 
-    it('should respect the webpack paths configuration', function (done) {
+    it('should respect the webpack paths configuration', async function () {
       const { innerString } = this;
-      compile(
+      const { inspect } = await compile(
         'import',
         {
           target: 'json-module',
@@ -361,66 +361,68 @@ describe('protobufjs-loader', function () {
             modules: ['node_modules', path.resolve(__dirname, 'fixtures')],
           },
         }
-      ).then(({ inspect }) => {
-        const contents = minify(inspect.arguments[0]);
-        assert.include(contents, innerString);
-        done();
-      });
+      );
+      const contents = minify(inspect.arguments[0]);
+      assert.include(contents, innerString);
     });
 
-    it('should respect an explicit paths configuration', function (done) {
+    it('should respect an explicit paths configuration', async function () {
       const { innerString } = this;
-      compile('import', {
+      const { inspect } = await compile('import', {
         target: 'json-module',
         paths: [path.resolve(__dirname, 'fixtures')],
-      }).then(({ inspect }) => {
-        const contents = minify(inspect.arguments[0]);
-        assert.include(contents, innerString);
-        done();
       });
+      const contents = minify(inspect.arguments[0]);
+      assert.include(contents, innerString);
     });
 
-    it('should add the imports as dependencies', function (done) {
-      compile('import', { paths: [path.resolve(__dirname, 'fixtures')] }).then(
-        ({ inspect }) => {
-          assert.include(
-            // This method is missing from the typings for older webpack
-            // versions, but it's supported in practice. If we drop
-            // support for v4 and below, we can remove this.
-            //
-            // @ts-ignore
-            inspect.context.getDependencies(),
-            path.resolve(__dirname, 'fixtures', 'basic.proto')
-          );
-          done();
-        }
-      );
+    it('should add the imports as dependencies', async function () {
+      const { inspect } = await compile('import', {
+        paths: [path.resolve(__dirname, 'fixtures')],
+      });
+
+      assert.sameMembers(inspect.context.getDependencies(), [
+        // The main proto file should be included.
+        path.resolve(__dirname, 'fixtures', 'import.proto'),
+
+        // Imported files should also be included.
+        path.resolve(__dirname, 'fixtures', 'basic.proto'),
+        path.resolve(__dirname, 'fixtures', 'sub', 'baz.proto'),
+      ]);
     });
 
-    it('should fail when the import is not found', function (done) {
-      compile('import', {
-        target: 'json-module',
-        // No include paths provided, so the 'import' fixture should
-        // fail to compile.
-      }).catch((err) => {
+    it('should fail when the import is not found', async function () {
+      let didError = false;
+      try {
+        await compile('import', {
+          target: 'json-module',
+          // No include paths provided, so the 'import' fixture should
+          // fail to compile.
+        });
+      } catch (err) {
+        didError = true;
         // The exact error that comes back from protobufjs differs
         // depending on the package version, so we have to just check
         // the webpack-specific portion of the error message.
         assert.include(`${err}`, 'ModuleBuildError: Module build failed');
-        done();
-      });
+      }
+      assert.isTrue(didError);
     });
   });
 
   describe('with invalid options', function () {
-    it('should fail if unrecognized properties are added', function (done) {
-      compile('basic', {
-        target: 'json-module',
-        foo: true,
-      }).catch((err) => {
+    it('should fail if unrecognized properties are added', async function () {
+      let didError = false;
+      try {
+        await compile('basic', {
+          target: 'json-module',
+          foo: true,
+        });
+      } catch (err) {
+        didError = true;
         assert.include(`${err}`, "configuration has an unknown property 'foo'");
-        done();
-      });
+      }
+      assert.isTrue(didError);
     });
   });
 });
