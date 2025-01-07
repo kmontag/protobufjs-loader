@@ -4,9 +4,11 @@
  * @type {Partial<import('semantic-release').GlobalConfig>}
  */
 const config = {
-  // Treat refactors as patch releases. See
-  // https://github.com/semantic-release/commit-analyzer?tab=readme-ov-file#usage.
+  // For defaults see:
+  // https://github.com/semantic-release/semantic-release/blob/master/docs/usage/configuration.md#plugins
   plugins: [
+    // Treat refactors as patch releases. See
+    // https://github.com/semantic-release/commit-analyzer?tab=readme-ov-file#usage.
     [
       '@semantic-release/commit-analyzer',
       {
@@ -15,6 +17,10 @@ const config = {
       },
     ],
     '@semantic-release/release-notes-generator',
+    // Publish releases to NPM.
+    '@semantic-release/npm',
+    // Publish releases to GitHub.
+    '@semantic-release/github',
   ],
 };
 
