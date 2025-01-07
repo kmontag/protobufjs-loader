@@ -51,6 +51,22 @@ const globPromise = (globStr) =>
     });
   });
 
+/**
+ * Promisified read-file-as-string function for convenience.
+ *
+ * @type { (path: string | fs.PathLike) => Promise<string> }
+ */
+const readFileAsString = (path) =>
+  new Promise((resolve, reject) => {
+    fs.readFile(path, (err, content) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(content.toString());
+      }
+    });
+  });
+
 describe('protobufjs-loader', function () {
   before(async function () {
     // The first time the compiler gets run (e.g. in a CI environment),
@@ -186,16 +202,7 @@ describe('protobufjs-loader', function () {
         );
         assert.sameMembers([expectedDefinitionsFile], files);
 
-        /** @type { string } */
-        const declarations = await new Promise((resolve, reject) => {
-          fs.readFile(expectedDefinitionsFile, (readErr, content) => {
-            if (readErr) {
-              reject(readErr);
-            } else {
-              resolve(content.toString());
-            }
-          });
-        });
+        const declarations = await readFileAsString(expectedDefinitionsFile);
 
         assert.include(declarations, 'public baz: string;');
         assert.include(declarations, 'public static decodeDelimited');
@@ -214,16 +221,7 @@ describe('protobufjs-loader', function () {
         );
         assert.sameMembers([expectedDefinitionsFile], files);
 
-        /** @type { string } */
-        const declarations = await new Promise((resolve, reject) => {
-          fs.readFile(expectedDefinitionsFile, (readErr, content) => {
-            if (readErr) {
-              reject(readErr);
-            } else {
-              resolve(content.toString());
-            }
-          });
-        });
+        const declarations = await readFileAsString(expectedDefinitionsFile);
 
         // Make sure the main protobufjs import shows up.
         assert.include(
@@ -253,15 +251,7 @@ describe('protobufjs-loader', function () {
         );
         assert.sameMembers([expectedDeclarationFile], files);
 
-        const declarations = await new Promise((resolve, reject) => {
-          fs.readFile(expectedDeclarationFile, (readErr, content) => {
-            if (readErr) {
-              reject(readErr);
-            } else {
-              resolve(content.toString());
-            }
-          });
-        });
+        const declarations = await readFileAsString(expectedDeclarationFile);
         assert.include(declarations, 'public baz: string;');
         assert.include(declarations, 'public static decodeDelimited');
         assert.include(declarations, 'declare namespace testModuleName');
@@ -307,7 +297,7 @@ describe('protobufjs-loader', function () {
           // Wait for the result if necessary.
           const locationStr = await Promise.resolve(location);
 
-          const content = fs.readFileSync(locationStr).toString();
+          const content = await readFileAsString(locationStr);
           assert.include(content, 'class Bar implements IBar');
           return true;
         };
@@ -368,16 +358,7 @@ describe('protobufjs-loader', function () {
           );
           assert.sameMembers([expectedDeclarationFile], files);
 
-          /** @type { string } */
-          const declarations = await new Promise((resolve, reject) => {
-            fs.readFile(expectedDeclarationFile, (readErr, content) => {
-              if (readErr) {
-                reject(readErr);
-              } else {
-                resolve(content.toString());
-              }
-            });
-          });
+          const declarations = await readFileAsString(expectedDeclarationFile);
 
           // Check that declarations from the top-level `import`
           // fixture are present.
