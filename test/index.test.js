@@ -54,11 +54,11 @@ const globPromise = (globStr) =>
 /**
  * Promisified read-file-as-string function for convenience.
  *
- * @type { (path: string | fs.PathLike) => Promise<string> }
+ * @type { (filename: string | fs.PathLike) => Promise<string> }
  */
-const readFileAsString = (path) =>
+const readFileAsString = (filename) =>
   new Promise((resolve, reject) => {
-    fs.readFile(path, (err, content) => {
+    fs.readFile(filename, (err, content) => {
       if (err) {
         reject(err);
       } else {
