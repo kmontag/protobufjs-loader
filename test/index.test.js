@@ -279,7 +279,10 @@ describe('protobufjs-loader', function () {
          *
          * @type { (tmpDir: string, location: string | Promise<string>) => Promise<boolean> }
          */
-        const assertSavesDeclarationToCustomLocation = (tmpDir, location) => {
+        const assertSavesDeclarationToCustomLocation = async (
+          tmpDir,
+          location
+        ) => {
           let outputInvocationCount = 0;
 
           /**
@@ -294,55 +297,59 @@ describe('protobufjs-loader', function () {
             return location;
           };
 
-          return compile(path.join(tmpDir, 'basic'), {
+          await compile(path.join(tmpDir, 'basic'), {
             pbts: {
               output,
             },
-          }).then(() => {
-            assert.equal(outputInvocationCount, 1);
-
-            return Promise.resolve(location).then((locationStr) => {
-              const content = fs.readFileSync(locationStr).toString();
-              assert.include(content, 'class Bar implements IBar');
-              return true;
-            });
           });
+          assert.equal(outputInvocationCount, 1);
+
+          // Wait for the result if necessary.
+          const locationStr = await Promise.resolve(location);
+
+          const content = fs.readFileSync(locationStr).toString();
+          assert.include(content, 'class Bar implements IBar');
+          return true;
         };
 
-        it('should save a declaration file to a synchronously-generated location', function (done) {
-          tmp.dir((err, altTmpDir, cleanup) => {
-            if (err) {
-              throw err;
-            }
-            assertSavesDeclarationToCustomLocation(
-              this.tmpDir,
-              path.join(altTmpDir, 'alt.d.ts')
-            ).then((result) => {
-              assert.isTrue(result);
-              cleanup();
-              done();
+        it('should save a declaration file to a synchronously-generated location', async function () {
+          const [altTmpDir, cleanup] = await new Promise((resolve, reject) => {
+            tmp.dir((err, altTmpDirResult, cleanupResult) => {
+              if (err) {
+                reject(err);
+              } else {
+                resolve([altTmpDirResult, cleanupResult]);
+              }
             });
           });
+          const result = await assertSavesDeclarationToCustomLocation(
+            this.tmpDir,
+            path.join(altTmpDir, 'alt.d.ts')
+          );
+          assert.isTrue(result);
+          cleanup();
         });
 
-        it('should save a declaration file to an asynchronously-generated location', function (done) {
-          tmp.dir((err, altTmpDir, cleanup) => {
-            if (err) {
-              throw err;
-            }
-            assertSavesDeclarationToCustomLocation(
-              this.tmpDir,
-              new Promise((resolve) => {
-                setTimeout(() => {
-                  resolve(path.join(altTmpDir, 'alt.d.ts'));
-                }, 5);
-              })
-            ).then((result) => {
-              assert.isTrue(result);
-              cleanup();
-              done();
+        it('should save a declaration file to an asynchronously-generated location', async function () {
+          const [altTmpDir, cleanup] = await new Promise((resolve, reject) => {
+            tmp.dir((err, altTmpDirResult, cleanupResult) => {
+              if (err) {
+                reject(err);
+              } else {
+                resolve([altTmpDirResult, cleanupResult]);
+              }
             });
           });
+          const result = await assertSavesDeclarationToCustomLocation(
+            this.tmpDir,
+            new Promise((resolve) => {
+              setTimeout(() => {
+                resolve(path.join(altTmpDir, 'alt.d.ts'));
+              }, 5);
+            })
+          );
+          assert.isTrue(result);
+          cleanup();
         });
       });
 
