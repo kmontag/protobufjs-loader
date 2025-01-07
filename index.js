@@ -33,6 +33,10 @@ const schema = {
               type: 'array',
               default: [],
             },
+            output: {
+              anyOf: [{ type: 'null' }, { instanceof: 'Function' }],
+              default: null,
+            },
           },
           additionalProperties: false,
         },
@@ -49,7 +53,7 @@ const schema = {
  * properties (i.e. the user-provided object merged with default
  * values).
  *
- * @typedef {{ args: string[] }} PbtsOptions
+ * @typedef {{ args: string[], output: ((resourcePath: string) => string | Promise<string>) | null }} PbtsOptions
  * @typedef {{
  *   paths: string[], pbjsArgs: string[],
  *   pbts: boolean | PbtsOptions,
@@ -70,8 +74,22 @@ const execPbts = async (resourcePath, pbtsOptions, compiledContent) => {
   /** @type PbtsOptions */
   const normalizedOptions = {
     args: [],
+    output: null,
     ...(pbtsOptions === true ? {} : pbtsOptions),
   };
+
+  /**
+   * Immediately run the function to get the typescript output path. If
+   * the function is asynchronous, it will run in the background while
+   * we kick off other async operations.
+   *
+   * @type { (resourcePath: string) => string | Promise<string> }
+   */
+  const output =
+    normalizedOptions.output === null
+      ? (r) => `${r}.d.ts`
+      : normalizedOptions.output;
+  const declarationFilenamePromise = Promise.resolve(output(resourcePath));
 
   // pbts CLI only supports streaming from stdin without a lot of
   // duplicated logic, so we need to use a tmp file. :(
@@ -96,7 +114,7 @@ const execPbts = async (resourcePath, pbtsOptions, compiledContent) => {
     });
   });
 
-  const declarationFilename = `${resourcePath}.d.ts`;
+  const declarationFilename = await declarationFilenamePromise;
   const pbtsArgs = ['-o', declarationFilename]
     .concat(normalizedOptions.args)
     .concat([compiledFilename]);

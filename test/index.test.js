@@ -180,7 +180,7 @@ describe('protobufjs-loader', function () {
         await compile(path.join(this.tmpDir, 'basic'), { pbts: true });
         // By default, definitions should just be siblings of their
         // associated .proto file.
-        const files = await globPromise(path.join(this.tmpDir, '*.d.ts'));
+        const files = await globPromise(path.join(this.tmpDir, '**', '*.d.ts'));
         const expectedDefinitionsFile = path.join(
           this.tmpDir,
           'basic.proto.d.ts'
@@ -266,6 +266,85 @@ describe('protobufjs-loader', function () {
         assert.include(declarations, 'public baz: string;');
         assert.include(declarations, 'public static decodeDelimited');
         assert.include(declarations, 'declare namespace testModuleName');
+      });
+
+      describe('with custom declaration output locations', function () {
+        /**
+         * Helper function to assert that declarations for the basic
+         * fixture can be saved to a custom location. Allows providing
+         * either a plain string location, or a promise resolving to
+         * the location.
+         *
+         * Return a promise resolving to true as a simple sanity check
+         * that all assertions completed successfully.
+         *
+         * @type { (tmpDir: string, location: string | Promise<string>) => Promise<boolean> }
+         */
+        const assertSavesDeclarationToCustomLocation = (tmpDir, location) => {
+          let outputInvocationCount = 0;
+
+          /**
+           * @type { (input: string) => string | Promise<string> }
+           */
+          const output = (input) => {
+            outputInvocationCount += 1;
+            assert.equal(
+              fs.realpathSync(input),
+              fs.realpathSync(path.join(tmpDir, 'basic.proto'))
+            );
+            return location;
+          };
+
+          return compile(path.join(tmpDir, 'basic'), {
+            pbts: {
+              output,
+            },
+          }).then(() => {
+            assert.equal(outputInvocationCount, 1);
+
+            return Promise.resolve(location).then((locationStr) => {
+              const content = fs.readFileSync(locationStr).toString();
+              assert.include(content, 'class Bar implements IBar');
+              return true;
+            });
+          });
+        };
+
+        it('should save a declaration file to a synchronously-generated location', function (done) {
+          tmp.dir((err, altTmpDir, cleanup) => {
+            if (err) {
+              throw err;
+            }
+            assertSavesDeclarationToCustomLocation(
+              this.tmpDir,
+              path.join(altTmpDir, 'alt.d.ts')
+            ).then((result) => {
+              assert.isTrue(result);
+              cleanup();
+              done();
+            });
+          });
+        });
+
+        it('should save a declaration file to an asynchronously-generated location', function (done) {
+          tmp.dir((err, altTmpDir, cleanup) => {
+            if (err) {
+              throw err;
+            }
+            assertSavesDeclarationToCustomLocation(
+              this.tmpDir,
+              new Promise((resolve) => {
+                setTimeout(() => {
+                  resolve(path.join(altTmpDir, 'alt.d.ts'));
+                }, 5);
+              })
+            ).then((result) => {
+              assert.isTrue(result);
+              cleanup();
+              done();
+            });
+          });
+        });
       });
 
       describe('with imports', function () {
