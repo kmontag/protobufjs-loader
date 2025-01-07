@@ -94,11 +94,11 @@ const execPbts = async (resourcePath, pbtsOptions, compiledContent) => {
   // pbts CLI only supports streaming from stdin without a lot of
   // duplicated logic, so we need to use a tmp file. :(
   const compiledFilename = await new Promise((resolve, reject) => {
-    tmp.file({ postfix: '.js' }, (err, compiledFilename) => {
+    tmp.file({ postfix: '.js' }, (err, result) => {
       if (err) {
         reject(err);
       } else {
-        resolve(compiledFilename);
+        resolve(result);
       }
     });
   });
@@ -166,11 +166,11 @@ const loadSource = async (source, context) => {
    * @type { string }
    */
   const filename = await new Promise((resolve, reject) => {
-    tmp.file((err, filename) => {
+    tmp.file((err, result) => {
       if (err) {
         reject(err);
       } else {
-        resolve(filename);
+        resolve(result);
       }
     });
   });
@@ -279,7 +279,7 @@ const loadSource = async (source, context) => {
 };
 
 /** @type { (this: LoaderContext, source: string) => void } */
-module.exports = function (source) {
+module.exports = function protobufJsLoader(source) {
   const callback = this.async();
 
   // Explicitly check this case, as the typescript compiler thinks

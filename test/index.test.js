@@ -102,11 +102,11 @@ describe('protobufjs-loader', function () {
         // directory.
         const fixturesPath = path.resolve(__dirname, 'fixtures');
         const [tmpDir, cleanup] = await new Promise((resolve, reject) => {
-          tmp.dir((err, tmpDir, cleanup) => {
+          tmp.dir((err, tmpDirResult, cleanupResult) => {
             if (err) {
               reject(err);
             } else {
-              resolve([tmpDir, cleanup]);
+              resolve([tmpDirResult, cleanupResult]);
             }
           });
         });
