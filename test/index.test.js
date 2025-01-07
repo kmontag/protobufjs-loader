@@ -51,6 +51,22 @@ const globPromise = (globStr) =>
     });
   });
 
+/**
+ * Promisified read-file-as-string function for convenience.
+ *
+ * @type { (filename: string | fs.PathLike) => Promise<string> }
+ */
+const readFileAsString = (filename) =>
+  new Promise((resolve, reject) => {
+    fs.readFile(filename, (err, content) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(content.toString());
+      }
+    });
+  });
+
 describe('protobufjs-loader', function () {
   before(async function () {
     // The first time the compiler gets run (e.g. in a CI environment),
@@ -186,16 +202,7 @@ describe('protobufjs-loader', function () {
         );
         assert.sameMembers([expectedDefinitionsFile], files);
 
-        /** @type { string } */
-        const declarations = await new Promise((resolve, reject) => {
-          fs.readFile(expectedDefinitionsFile, (readErr, content) => {
-            if (readErr) {
-              reject(readErr);
-            } else {
-              resolve(content.toString());
-            }
-          });
-        });
+        const declarations = await readFileAsString(expectedDefinitionsFile);
 
         assert.include(declarations, 'public baz: string;');
         assert.include(declarations, 'public static decodeDelimited');
@@ -214,16 +221,7 @@ describe('protobufjs-loader', function () {
         );
         assert.sameMembers([expectedDefinitionsFile], files);
 
-        /** @type { string } */
-        const declarations = await new Promise((resolve, reject) => {
-          fs.readFile(expectedDefinitionsFile, (readErr, content) => {
-            if (readErr) {
-              reject(readErr);
-            } else {
-              resolve(content.toString());
-            }
-          });
-        });
+        const declarations = await readFileAsString(expectedDefinitionsFile);
 
         // Make sure the main protobufjs import shows up.
         assert.include(
@@ -253,15 +251,7 @@ describe('protobufjs-loader', function () {
         );
         assert.sameMembers([expectedDeclarationFile], files);
 
-        const declarations = await new Promise((resolve, reject) => {
-          fs.readFile(expectedDeclarationFile, (readErr, content) => {
-            if (readErr) {
-              reject(readErr);
-            } else {
-              resolve(content.toString());
-            }
-          });
-        });
+        const declarations = await readFileAsString(expectedDeclarationFile);
         assert.include(declarations, 'public baz: string;');
         assert.include(declarations, 'public static decodeDelimited');
         assert.include(declarations, 'declare namespace testModuleName');
@@ -279,7 +269,10 @@ describe('protobufjs-loader', function () {
          *
          * @type { (tmpDir: string, location: string | Promise<string>) => Promise<boolean> }
          */
-        const assertSavesDeclarationToCustomLocation = (tmpDir, location) => {
+        const assertSavesDeclarationToCustomLocation = async (
+          tmpDir,
+          location
+        ) => {
           let outputInvocationCount = 0;
 
           /**
@@ -294,55 +287,59 @@ describe('protobufjs-loader', function () {
             return location;
           };
 
-          return compile(path.join(tmpDir, 'basic'), {
+          await compile(path.join(tmpDir, 'basic'), {
             pbts: {
               output,
             },
-          }).then(() => {
-            assert.equal(outputInvocationCount, 1);
-
-            return Promise.resolve(location).then((locationStr) => {
-              const content = fs.readFileSync(locationStr).toString();
-              assert.include(content, 'class Bar implements IBar');
-              return true;
-            });
           });
+          assert.equal(outputInvocationCount, 1);
+
+          // Wait for the result if necessary.
+          const locationStr = await Promise.resolve(location);
+
+          const content = await readFileAsString(locationStr);
+          assert.include(content, 'class Bar implements IBar');
+          return true;
         };
 
-        it('should save a declaration file to a synchronously-generated location', function (done) {
-          tmp.dir((err, altTmpDir, cleanup) => {
-            if (err) {
-              throw err;
-            }
-            assertSavesDeclarationToCustomLocation(
-              this.tmpDir,
-              path.join(altTmpDir, 'alt.d.ts')
-            ).then((result) => {
-              assert.isTrue(result);
-              cleanup();
-              done();
+        it('should save a declaration file to a synchronously-generated location', async function () {
+          const [altTmpDir, cleanup] = await new Promise((resolve, reject) => {
+            tmp.dir((err, altTmpDirResult, cleanupResult) => {
+              if (err) {
+                reject(err);
+              } else {
+                resolve([altTmpDirResult, cleanupResult]);
+              }
             });
           });
+          const result = await assertSavesDeclarationToCustomLocation(
+            this.tmpDir,
+            path.join(altTmpDir, 'alt.d.ts')
+          );
+          assert.isTrue(result);
+          cleanup();
         });
 
-        it('should save a declaration file to an asynchronously-generated location', function (done) {
-          tmp.dir((err, altTmpDir, cleanup) => {
-            if (err) {
-              throw err;
-            }
-            assertSavesDeclarationToCustomLocation(
-              this.tmpDir,
-              new Promise((resolve) => {
-                setTimeout(() => {
-                  resolve(path.join(altTmpDir, 'alt.d.ts'));
-                }, 5);
-              })
-            ).then((result) => {
-              assert.isTrue(result);
-              cleanup();
-              done();
+        it('should save a declaration file to an asynchronously-generated location', async function () {
+          const [altTmpDir, cleanup] = await new Promise((resolve, reject) => {
+            tmp.dir((err, altTmpDirResult, cleanupResult) => {
+              if (err) {
+                reject(err);
+              } else {
+                resolve([altTmpDirResult, cleanupResult]);
+              }
             });
           });
+          const result = await assertSavesDeclarationToCustomLocation(
+            this.tmpDir,
+            new Promise((resolve) => {
+              setTimeout(() => {
+                resolve(path.join(altTmpDir, 'alt.d.ts'));
+              }, 5);
+            })
+          );
+          assert.isTrue(result);
+          cleanup();
         });
       });
 
@@ -361,16 +358,7 @@ describe('protobufjs-loader', function () {
           );
           assert.sameMembers([expectedDeclarationFile], files);
 
-          /** @type { string } */
-          const declarations = await new Promise((resolve, reject) => {
-            fs.readFile(expectedDeclarationFile, (readErr, content) => {
-              if (readErr) {
-                reject(readErr);
-              } else {
-                resolve(content.toString());
-              }
-            });
-          });
+          const declarations = await readFileAsString(expectedDeclarationFile);
 
           // Check that declarations from the top-level `import`
           // fixture are present.
