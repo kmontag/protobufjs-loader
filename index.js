@@ -140,9 +140,12 @@ const execPbts = async (resourcePath, pbtsOptions, compiledContent) => {
  */
 const loadSource = async (source, context) => {
   const defaultPaths = (() => {
+    // eslint-disable-next-line no-underscore-dangle
     if (context._compiler) {
       // The `_compiler` property is deprecated, but still works as
       // of webpack@5.
+      //
+      // eslint-disable-next-line no-underscore-dangle
       return (context._compiler.options.resolve || {}).modules;
     }
 
