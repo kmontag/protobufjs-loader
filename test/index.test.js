@@ -40,8 +40,8 @@ const minify = (contents) => {
  *
  * @type { (globStr: string) => Promise<string[]> }
  */
-const globPromise = (globStr) => {
-  return new Promise((resolve, reject) => {
+const globPromise = (globStr) =>
+  new Promise((resolve, reject) => {
     glob(globStr, (err, files) => {
       if (err) {
         reject(err);
@@ -50,7 +50,6 @@ const globPromise = (globStr) => {
       }
     });
   });
-};
 
 describe('protobufjs-loader', function () {
   before(async function () {
