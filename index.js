@@ -164,7 +164,18 @@ const loadSource = async (source, context) => {
   validateOptions(schema, options, { name: 'protobufjs-loader' });
 
   /**
-   * Get a tmp file location and write the file content.
+   * Get a temp file location and write the protobuf file content.
+   *
+   * Note: we could potentially remove the need for a temp file here
+   * by spawning a subprocess, passing "-" as a filename, and passing
+   * the protobuf content on its stdin. We could also feasibly do this
+   * through the in-process `pbjs.main` call (though it appears this
+   * would require manipulating this process' own stdin, which would
+   * be inappropriate for a loader).
+   *
+   * However, a subprocess would add some complexity, and we'd need to
+   * figure out how to add dependencies to the context without calling
+   * `protobuf.load` with a temp file.
    *
    * @type { string }
    */
