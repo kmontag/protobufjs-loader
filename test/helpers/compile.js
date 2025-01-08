@@ -22,7 +22,7 @@ const fixturePath = path.resolve(__dirname, '..', 'fixtures');
  */
 module.exports = async function compile(fixture, loaderOpts, webpackOpts) {
   /** @type { InspectLoaderResult | undefined } */
-  let inspect = undefined;
+  let inspect;
 
   /** @type { WebpackConfig } */
   const config = {
@@ -87,7 +87,7 @@ module.exports = async function compile(fixture, loaderOpts, webpackOpts) {
   }
   compiler.outputFileSystem.join = path.join.bind(path);
 
-  /** @type { webpack.Stats } */
+  /** @type { webpack.Stats | undefined } */
   const stats = await new Promise((resolve, reject) => {
     compiler.run((err, statsResult) => {
       if (err) {
@@ -97,6 +97,10 @@ module.exports = async function compile(fixture, loaderOpts, webpackOpts) {
       }
     });
   });
+
+  if (stats === undefined) {
+    throw new Error('unexpected - no compilation stats');
+  }
 
   if (stats.hasErrors()) {
     if ('compilation' in stats) {
