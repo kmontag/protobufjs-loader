@@ -39,7 +39,6 @@
     "@types/chai": "^4.3.1",
     "@types/glob": "^8.0.0",
     "@types/loader-utils": "^2.0.3",
-    "@types/memory-fs": "^0.3.3",
     "@types/mocha": "^9.1.1",
     "@types/tmp": "^0.2.3",
     "chai": "^4.1.2",
