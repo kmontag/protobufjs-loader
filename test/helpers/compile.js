@@ -87,8 +87,7 @@ module.exports = async function compile(fixture, loaderOpts, webpackOpts) {
   }
   compiler.outputFileSystem.join = path.join.bind(path);
 
-  /** @type { Promise<{ inspect: InspectLoaderResult }> } */
-  const resultPromise = new Promise((resolve, reject) => {
+  return new Promise((resolve, reject) => {
     compiler.run((err, stats) => {
       const problem = (() => {
         if (err) {
@@ -98,10 +97,6 @@ module.exports = async function compile(fixture, loaderOpts, webpackOpts) {
           if (stats.hasErrors()) {
             if ('compilation' in stats) {
               /** @type Error */
-              // The `stats` object appears to be incorrectly typed;
-              // this compilation field exists in practice.
-              //
-              // @ts-ignore
               const compilationErr = stats.compilation.errors[0];
               if (compilationErr) {
                 return compilationErr;
@@ -129,6 +124,4 @@ module.exports = async function compile(fixture, loaderOpts, webpackOpts) {
       }
     });
   });
-
-  return await resultPromise;
 };
