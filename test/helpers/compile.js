@@ -1,6 +1,6 @@
-const MemoryFS = require('memory-fs');
 const path = require('path');
 const webpack = require('webpack');
+const { createFsFromVolume, Volume } = require('memfs');
 
 const fixturePath = path.resolve(__dirname, '..', 'fixtures');
 
@@ -20,67 +20,75 @@ const fixturePath = path.resolve(__dirname, '..', 'fixtures');
 /**
  * @type { (fixture: string, loaderOpts?: object, webpackOpts?: object) => Promise<{ inspect: InspectLoaderResult }> }
  */
-module.exports = function compile(fixture, loaderOpts, webpackOpts) {
-  return new Promise((resolve, reject) => {
-    /** @type { InspectLoaderResult } */
-    let inspect;
+module.exports = async function compile(fixture, loaderOpts, webpackOpts) {
+  /** @type { InspectLoaderResult } */
+  let inspect;
 
-    /** @type { WebpackConfig } */
-    const config = {
-      entry: path.resolve(fixturePath, `${fixture}.proto`),
-      output: {
-        path: '/',
-        filename: 'compiled.js',
-        // By default, webpack@4+ uses a hash function (md4) which is
-        // not supported by the Node 17+ SSL provider. Set it
-        // explicitly to avoid a compilation error unrelated to
-        // protobufjs. See
-        // https://stackoverflow.com/a/73465262/13264260.
-        hashFunction: 'md5',
-      },
-      module: {
-        rules: [
-          {
-            test: /\.proto$/,
-            use: [
-              {
-                loader: 'inspect-loader',
-                options: {
-                  /** @type { (inspect: InspectLoaderResult) => any } */
-                  callback(callbackInspect) {
-                    inspect = callbackInspect;
-                  },
+  /** @type { WebpackConfig } */
+  const config = {
+    entry: path.resolve(fixturePath, `${fixture}.proto`),
+    output: {
+      path: '/',
+      filename: 'compiled.js',
+      // By default, webpack@4+ uses a hash function (md4) which is
+      // not supported by the Node 17+ SSL provider. Set it
+      // explicitly to avoid a compilation error unrelated to
+      // protobufjs. See
+      // https://stackoverflow.com/a/73465262/13264260.
+      hashFunction: 'md5',
+    },
+    module: {
+      rules: [
+        {
+          test: /\.proto$/,
+          use: [
+            {
+              loader: 'inspect-loader',
+              options: {
+                /** @type { (inspect: InspectLoaderResult) => any } */
+                callback(callbackInspect) {
+                  inspect = callbackInspect;
                 },
               },
-              {
-                loader: path.resolve(__dirname, '..', '..', 'index.js'),
-                options: loaderOpts,
-              },
-            ],
-          },
-        ],
-      },
-      // webpack@4 adds the `mode` configuration option, which adds some
-      // additional config defaults that we want to avoid for
-      // consistency.
-      mode: 'none',
-      // Make sure to test without backwards-compatibility
-      // enabled. See
-      // https://webpack.js.org/configuration/experiments/#experimentsbackcompat.
-      experiments: { backCompat: false },
-      ...webpackOpts,
-    };
+            },
+            {
+              loader: path.resolve(__dirname, '..', '..', 'index.js'),
+              options: loaderOpts,
+            },
+          ],
+        },
+      ],
+    },
+    // webpack@4 adds the `mode` configuration option, which adds some
+    // additional config defaults that we want to avoid for
+    // consistency.
+    mode: 'none',
+    // Make sure to test without backwards-compatibility
+    // enabled. See
+    // https://webpack.js.org/configuration/experiments/#experimentsbackcompat.
+    experiments: { backCompat: false },
+    ...webpackOpts,
+  };
 
-    const compiler = webpack(config);
-    const fs = new MemoryFS();
+  const compiler = webpack(config);
 
-    // This property is missing from the typings for older webpack
-    // versions, but it's supported in practice. If we drop support
-    // for v4 and below, we can remove this.
-    //
-    // @ts-ignore
-    compiler.outputFileSystem = fs;
+  // Create an in-memory file system for compilation, see
+  // https://webpack.js.org/contribute/writing-a-loader/#testing.
+  //
+  // The typechecker thinks this is an incompatible assignment, but
+  // it's pulled from the webpack docs.
+  //
+  // @ts-expect-error
+  compiler.outputFileSystem = createFsFromVolume(new Volume());
 
+  // Help the typechecker.
+  if (compiler.outputFileSystem === null) {
+    throw new Error('unexpected: null output file system');
+  }
+  compiler.outputFileSystem.join = path.join.bind(path);
+
+  /** @type { Promise<{ inspect: InspectLoaderResult }> } */
+  const resultPromise = new Promise((resolve, reject) => {
     compiler.run((err, stats) => {
       const problem = (() => {
         if (err) {
@@ -121,4 +129,6 @@ module.exports = function compile(fixture, loaderOpts, webpackOpts) {
       }
     });
   });
+
+  return await resultPromise;
 };
