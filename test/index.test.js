@@ -97,13 +97,13 @@ describe('protobufjs-loader', function () {
     it('should compile static code by default', async function () {
       const { inspect } = await compile('basic');
       const contents = minify(inspect.arguments[0]);
-      assert.include(contents, 'foo.Bar=function(){');
+      assert.include(contents, 'foo.Bar=(()=>{function Bar(properties)');
     });
 
     it('should compile static code when the option is set explicitly', async function () {
       const { inspect } = await compile('basic', { target: 'static-module' });
       const contents = minify(inspect.arguments[0]);
-      assert.include(contents, 'foo.Bar=function(){');
+      assert.include(contents, 'foo.Bar=(()=>{function Bar(properties)');
     });
 
     describe('with typescript compilation', function () {
