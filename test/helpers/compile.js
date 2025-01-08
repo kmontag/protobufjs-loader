@@ -21,8 +21,8 @@ const fixturePath = path.resolve(__dirname, '..', 'fixtures');
  * @type { (fixture: string, loaderOpts?: object, webpackOpts?: object) => Promise<{ inspect: InspectLoaderResult }> }
  */
 module.exports = async function compile(fixture, loaderOpts, webpackOpts) {
-  /** @type { InspectLoaderResult } */
-  let inspect;
+  /** @type { InspectLoaderResult | undefined } */
+  let inspect = undefined;
 
   /** @type { WebpackConfig } */
   const config = {
@@ -87,41 +87,37 @@ module.exports = async function compile(fixture, loaderOpts, webpackOpts) {
   }
   compiler.outputFileSystem.join = path.join.bind(path);
 
-  return new Promise((resolve, reject) => {
-    compiler.run((err, stats) => {
-      const problem = (() => {
-        if (err) {
-          return err;
-        }
-        if (stats) {
-          if (stats.hasErrors()) {
-            if ('compilation' in stats) {
-              /** @type Error */
-              const compilationErr = stats.compilation.errors[0];
-              if (compilationErr) {
-                return compilationErr;
-              }
-            }
-
-            // fallback in case no specific error was found above for
-            // some reason.
-            return 'compilation error';
-          }
-          if (stats.hasWarnings()) {
-            return 'compilation warning';
-          }
-        }
-
-        return undefined;
-      })();
-
-      if (problem) {
-        reject(problem);
+  /** @type { webpack.Stats } */
+  const stats = await new Promise((resolve, reject) => {
+    compiler.run((err, statsResult) => {
+      if (err) {
+        reject(err);
       } else {
-        resolve({
-          inspect,
-        });
+        resolve(statsResult);
       }
     });
   });
+
+  if (stats.hasErrors()) {
+    if ('compilation' in stats) {
+      /** @type Error */
+      const compilationErr = stats.compilation.errors[0];
+      if (compilationErr) {
+        throw compilationErr;
+      }
+    }
+
+    // fallback in case no specific error was found above for
+    // some reason.
+    throw new Error('unknown compilation error');
+  }
+  if (stats.hasWarnings()) {
+    throw new Error('compilation has warnings');
+  }
+
+  if (inspect === undefined) {
+    throw new Error('unexpected - inspect loader was never invoked');
+  }
+
+  return { inspect };
 };
