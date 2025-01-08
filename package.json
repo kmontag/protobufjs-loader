@@ -45,7 +45,7 @@
     "conventional-changelog-conventionalcommits": "^8.0.0",
     "eslint": "^8.20.0",
     "eslint-config-airbnb-base": "^15.0.0",
-    "eslint-config-prettier": "^8.5.0",
+    "eslint-config-prettier": "^9.0.0",
     "eslint-plugin-mocha": "^10.0.5",
     "glob": "^8.0.0",
     "inspect-loader": "^1.0.0",
