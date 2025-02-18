@@ -50,7 +50,7 @@
     "glob": "^8.0.0",
     "inspect-loader": "^1.0.0",
     "memfs": "^4.15.3",
-    "mocha": "^9.2.2",
+    "mocha": "^11.1.0",
     "prettier": "^2.7.1",
     "semantic-release": "^24.2.1",
     "typescript": "^4.7.4",
