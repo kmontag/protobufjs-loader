@@ -395,8 +395,10 @@ describe('protobufjs-loader', function () {
       const { inspect } = await compile('basic', { pbjsArgs: ['--no-encode'] });
       const contents = minify(inspect.arguments[0]);
 
-      // Sanity check
-      const innerString = 'Bar.decode=function decode(reader,length)';
+      // Sanity check - note that depending on the minor version of
+      // protobufjs, the actual function might have a third`error`
+      // argument.
+      const innerString = 'Bar.decode=function decode(reader,length';
       assert.include(contents, innerString);
 
       assert.notInclude(contents, 'encode');
