@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package foo;
+
+// Try to import a non-existent file. An error should be thrown during
+// processing.
+import "nonexistent.proto";
+
+message FailedImportBar {
+  string name = 1;
+}

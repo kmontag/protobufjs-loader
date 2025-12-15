@@ -456,10 +456,14 @@ describe('protobufjs-loader', function () {
     it('should fail when the import is not found', async function () {
       let didError = false;
       try {
-        await compile('import', {
+        // Note: previously this was being tested by attempting to use
+        // `import.proto` with the paths field unset. This does throw
+        // an import error, but in protobufjs 7.5.0+, it also causes
+        // an asynchronous error to be thrown while attempting to
+        // resolve missing types, which is awkward to deal with in
+        // tests.
+        await compile('import-failure', {
           target: 'json-module',
-          // No include paths provided, so the 'import' fixture should
-          // fail to compile.
         });
       } catch (err) {
         didError = true;
