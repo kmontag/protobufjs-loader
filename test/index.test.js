@@ -395,8 +395,10 @@ describe('protobufjs-loader', function () {
       const { inspect } = await compile('basic', { pbjsArgs: ['--no-encode'] });
       const contents = minify(inspect.arguments[0]);
 
-      // Sanity check
-      const innerString = 'Bar.decode=function decode(reader,length)';
+      // Sanity check - note that depending on the minor version of
+      // protobufjs, the actual function might have a third`error`
+      // argument.
+      const innerString = 'Bar.decode=function decode(reader,length';
       assert.include(contents, innerString);
 
       assert.notInclude(contents, 'encode');
@@ -454,10 +456,16 @@ describe('protobufjs-loader', function () {
     it('should fail when the import is not found', async function () {
       let didError = false;
       try {
-        await compile('import', {
+        // Note: previously this was being tested by simply using
+        // `import.proto` with the paths field unset. This does throw
+        // an import error, but in protobufjs 7.5.0+, it also causes
+        // an additional asynchronous error to be thrown while
+        // attempting to resolve missing types, which is awkward to
+        // deal with in tests.
+        await compile('import-failure', {
           target: 'json-module',
-          // No include paths provided, so the 'import' fixture should
-          // fail to compile.
+          // No include paths provided, so the fixture should fail to
+          // compile.
         });
       } catch (err) {
         didError = true;

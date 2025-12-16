@@ -49,7 +49,7 @@
     "eslint-plugin-mocha": "^10.5.0",
     "glob": "^8.0.0",
     "inspect-loader": "^1.0.0",
-    "memfs": "^4.15.3",
+    "memfs": ">=4.15.3 <4.40.0",
     "mocha": "^9.2.2",
     "prettier": "^2.7.1",
     "semantic-release": "^24.2.1",

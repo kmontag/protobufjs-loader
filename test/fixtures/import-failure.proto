@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package foo;
+
+// This should throw an import failure assuming no include paths have
+// been provided during compilation.
+import "basic.proto";
+
+message FailedImportBar {
+  string name = 1;
+}
