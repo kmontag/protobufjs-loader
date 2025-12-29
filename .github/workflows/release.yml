@@ -25,6 +25,14 @@ jobs:
         run: |
           echo "ACTIONS_ID_TOKEN_REQUEST_URL=$ACTIONS_ID_TOKEN_REQUEST_URL"
           echo "ACTIONS_ID_TOKEN_REQUEST_TOKEN=${ACTIONS_ID_TOKEN_REQUEST_TOKEN:+set}"
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+      - run: npm ci
+      - run: npm run build --if-present
       - name: Debug npm OIDC exchange
         env:
           NPM_CONFIG_LOGLEVEL: silly
@@ -41,14 +49,6 @@ jobs:
 
           echo "Attempting npm publish dry-run (OIDC should trigger):"
           npm publish --dry-run --access public || true
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22.x'
-      - run: npm ci
-      - run: npm run build --if-present
       - run: npm test
       - name: Run semantic-release
         run: npx semantic-release ${{ github.event_name == 'pull_request' && '--dry-run' || '' }}
