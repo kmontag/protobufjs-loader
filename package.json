@@ -17,12 +17,7 @@
     "node": ">=12.0.0",
     "npm": ">=7.0.0"
   },
-  "keywords": [
-    "webpack",
-    "protobuf",
-    "protobufjs",
-    "ProtoBuf.js"
-  ],
+  "keywords": ["webpack", "protobuf", "protobufjs", "ProtoBuf.js"],
   "author": "Kevin Montag <kmontag@cs.stanford.edu>",
   "license": "MIT",
   "dependencies": {
@@ -52,7 +47,7 @@
     "memfs": ">=4.15.3 <4.40.0",
     "mocha": "^9.2.2",
     "prettier": "^2.7.1",
-    "semantic-release": "^24.2.1",
+    "semantic-release": "^25.0.2",
     "typescript": "^4.7.4",
     "uglify-js": "^3.19.3",
     "webpack": "^5.0.0"
