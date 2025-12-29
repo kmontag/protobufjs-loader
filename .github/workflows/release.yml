@@ -26,9 +26,10 @@ jobs:
           fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
-          node-version: '22.x'
+          node-version: 'lts/*'
       - run: npm ci
       - run: npm run build --if-present
+      - run: npm audit signatures
       - run: npm test
       - name: Run semantic-release
         run: npx semantic-release ${{ github.event_name == 'pull_request' && '--dry-run' || '' }}
