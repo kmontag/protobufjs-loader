@@ -21,6 +21,10 @@ jobs:
       id-token: write
 
     steps:
+      - name: Debug OIDC availability
+        run: |
+          echo "ACTIONS_ID_TOKEN_REQUEST_URL=$ACTIONS_ID_TOKEN_REQUEST_URL"
+          echo "ACTIONS_ID_TOKEN_REQUEST_TOKEN=${ACTIONS_ID_TOKEN_REQUEST_TOKEN:+set}"
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
