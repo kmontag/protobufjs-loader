@@ -115,8 +115,23 @@ module.exports = async function compile(fixture, loaderOpts, webpackOpts) {
     // some reason.
     throw new Error('unknown compilation error');
   }
-  if (stats.hasWarnings()) {
-    throw new Error('compilation has warnings');
+  // The `@protobufjs/inquire` runtime helper does a bare
+  // `require(moduleName)` to look up optional modules. Webpack can't
+  // statically analyze this and emits a critical-dependency warning;
+  // the behavior is harmless and lives upstream, so filter it out
+  // here rather than failing tests on it.
+  const unexpectedWarnings = stats.compilation.warnings.filter((w) => {
+    if (w.name !== 'ModuleDependencyWarning') return true;
+    const we = /** @type { webpack.WebpackError } */ (w);
+    if (!(we.module instanceof webpack.NormalModule)) return true;
+    return !/@protobufjs[\\/]inquire[\\/]/.test(we.module.resource);
+  });
+  if (unexpectedWarnings.length > 0) {
+    throw new Error(
+      `compilation has warnings: ${unexpectedWarnings
+        .map((w) => w.message)
+        .join('; ')}`
+    );
   }
 
   if (inspect === undefined) {
