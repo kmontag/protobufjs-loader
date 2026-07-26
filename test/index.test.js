@@ -1,11 +1,26 @@
 const { assert } = require('chai');
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
-const tmp = require('tmp');
 const UglifyJS = require('uglify-js');
 
 const glob = require('glob');
 const compile = require('./helpers/compile');
+
+/**
+ * Creates a temporary directory under the OS temp directory and
+ * returns its path alongside a cleanup function that recursively
+ * removes it.
+ *
+ * @type { () => { dir: string, cleanup: () => void } }
+ */
+const makeTmpDir = () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'protobufjs-loader-test-'));
+  return {
+    dir,
+    cleanup: () => fs.rmSync(dir, { recursive: true, force: true }),
+  };
+};
 
 /**
  * Minifies the given JS string using ugilfy-js, so we can
@@ -116,15 +131,7 @@ describe('protobufjs-loader', function () {
         // compiled definitions, we perform the compilation in a tmp
         // directory.
         const fixturesPath = path.resolve(__dirname, 'fixtures');
-        const [tmpDir, cleanup] = await new Promise((resolve, reject) => {
-          tmp.dir((err, tmpDirResult, cleanupResult) => {
-            if (err) {
-              reject(err);
-            } else {
-              resolve([tmpDirResult, cleanupResult]);
-            }
-          });
-        });
+        const { dir: tmpDir, cleanup } = makeTmpDir();
 
         this.tmpDir = tmpDir;
         this.cleanup = cleanup;
@@ -303,15 +310,7 @@ describe('protobufjs-loader', function () {
         };
 
         it('should save a declaration file to a synchronously-generated location', async function () {
-          const [altTmpDir, cleanup] = await new Promise((resolve, reject) => {
-            tmp.dir((err, altTmpDirResult, cleanupResult) => {
-              if (err) {
-                reject(err);
-              } else {
-                resolve([altTmpDirResult, cleanupResult]);
-              }
-            });
-          });
+          const { dir: altTmpDir, cleanup } = makeTmpDir();
           const result = await assertSavesDeclarationToCustomLocation(
             this.tmpDir,
             path.join(altTmpDir, 'alt.d.ts')
@@ -321,15 +320,7 @@ describe('protobufjs-loader', function () {
         });
 
         it('should save a declaration file to an asynchronously-generated location', async function () {
-          const [altTmpDir, cleanup] = await new Promise((resolve, reject) => {
-            tmp.dir((err, altTmpDirResult, cleanupResult) => {
-              if (err) {
-                reject(err);
-              } else {
-                resolve([altTmpDirResult, cleanupResult]);
-              }
-            });
-          });
+          const { dir: altTmpDir, cleanup } = makeTmpDir();
           const result = await assertSavesDeclarationToCustomLocation(
             this.tmpDir,
             new Promise((resolve) => {

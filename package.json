@@ -28,15 +28,13 @@
   "dependencies": {
     "protobufjs": "^7.0.0",
     "protobufjs-cli": "^1.0.0",
-    "schema-utils": "^4.0.0",
-    "tmp": "^0.2.1"
+    "schema-utils": "^4.0.0"
   },
   "devDependencies": {
     "@types/chai": "^4.3.1",
     "@types/glob": "^8.0.0",
     "@types/loader-utils": "^2.0.3",
     "@types/mocha": "^9.1.1",
-    "@types/tmp": "^0.2.3",
     "chai": "^4.1.2",
     "conventional-changelog-conventionalcommits": "^8.0.0",
     "eslint": "^8.20.0",
