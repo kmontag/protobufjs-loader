@@ -26,8 +26,8 @@
   "author": "Kevin Montag <kmontag@cs.stanford.edu>",
   "license": "MIT",
   "dependencies": {
-    "protobufjs": "^7.0.0",
-    "protobufjs-cli": "^1.0.0",
+    "protobufjs": "^8.7.1",
+    "protobufjs-cli": "^2.6.1",
     "schema-utils": "^4.0.0",
     "tmp": "^0.2.1"
   },
