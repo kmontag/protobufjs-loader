@@ -115,11 +115,12 @@ module.exports = async function compile(fixture, loaderOpts, webpackOpts) {
     // some reason.
     throw new Error('unknown compilation error');
   }
-  // The `@protobufjs/inquire` runtime helper does a bare
-  // `require(moduleName)` to look up optional modules. Webpack can't
-  // statically analyze this and emits a critical-dependency warning;
-  // the behavior is harmless and lives upstream, so filter it out
-  // here rather than failing tests on it.
+  // protobufjs 7 ships an `@protobufjs/inquire` runtime helper that
+  // does a bare `require(moduleName)` to look up optional modules.
+  // Webpack can't statically analyze this and emits a
+  // critical-dependency warning; the behavior is harmless and lives
+  // upstream, so filter it out here rather than failing tests on it.
+  // protobufjs 8 removed the submodule, so this matches nothing there.
   const unexpectedWarnings = stats.compilation.warnings.filter((w) => {
     if (w.name !== 'ModuleDependencyWarning') return true;
     const we = /** @type { webpack.WebpackError } */ (w);

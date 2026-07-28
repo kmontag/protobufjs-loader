@@ -26,8 +26,6 @@
   "author": "Kevin Montag <kmontag@cs.stanford.edu>",
   "license": "MIT",
   "dependencies": {
-    "protobufjs": "^7.0.0",
-    "protobufjs-cli": "^1.0.0",
     "schema-utils": "^4.0.0"
   },
   "devDependencies": {
@@ -46,12 +44,16 @@
     "memfs": ">=4.15.3 <4.40.0",
     "mocha": "^9.2.2",
     "prettier": "^2.7.1",
+    "protobufjs": "^8.0.0",
+    "protobufjs-cli": "^2.0.0",
     "semantic-release": "^25.0.2",
     "typescript": "^4.7.4",
     "uglify-js": "^3.19.3",
     "webpack": "^5.0.0"
   },
   "peerDependencies": {
+    "protobufjs": "^7.0.0 || ^8.0.0",
+    "protobufjs-cli": "^1.0.0 || ^2.0.0",
     "webpack": "^5.0.0"
   },
   "repository": {
