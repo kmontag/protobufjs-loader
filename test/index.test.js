@@ -211,8 +211,10 @@ describe('protobufjs-loader', function () {
 
         const declarations = await readFileAsString(expectedDefinitionsFile);
 
-        assert.include(declarations, 'public baz: string;');
-        assert.include(declarations, 'public static decodeDelimited');
+        // protobufjs 8 drops the `public` modifier that 7 emitted, so
+        // assert on the version-agnostic remainder.
+        assert.include(declarations, 'baz: string;');
+        assert.include(declarations, 'static decodeDelimited');
       });
 
       it('should compile nearly-empty declarations if typescript compilation is enabled for JSON output', async function () {
@@ -259,8 +261,8 @@ describe('protobufjs-loader', function () {
         assert.sameMembers([expectedDeclarationFile], files);
 
         const declarations = await readFileAsString(expectedDeclarationFile);
-        assert.include(declarations, 'public baz: string;');
-        assert.include(declarations, 'public static decodeDelimited');
+        assert.include(declarations, 'baz: string;');
+        assert.include(declarations, 'static decodeDelimited');
         assert.include(declarations, 'declare namespace testModuleName');
       });
 
@@ -305,7 +307,7 @@ describe('protobufjs-loader', function () {
           const locationStr = await Promise.resolve(location);
 
           const content = await readFileAsString(locationStr);
-          assert.include(content, 'class Bar implements IBar');
+          assert.include(content, 'class Bar');
           return true;
         };
 
@@ -353,15 +355,15 @@ describe('protobufjs-loader', function () {
 
           // Check that declarations from the top-level `import`
           // fixture are present.
-          assert.include(declarations, 'class NotBar implements INotBar {');
+          assert.include(declarations, 'class NotBar');
 
           // Check that declarations from the imported `basic`
           // fixture are present.
-          assert.include(declarations, 'class Bar implements IBar');
+          assert.include(declarations, 'class Bar');
 
           // Check that declarations imported from the
           // subdirectory are present.
-          assert.include(declarations, 'class Baz implements IBaz');
+          assert.include(declarations, 'class Baz');
           assert.include(declarations, 'namespace sub');
         });
       });
@@ -386,10 +388,10 @@ describe('protobufjs-loader', function () {
       const { inspect } = await compile('basic', { pbjsArgs: ['--no-encode'] });
       const contents = minify(inspect.arguments[0]);
 
-      // Sanity check - note that depending on the minor version of
-      // protobufjs, the actual function might have a third`error`
-      // argument.
-      const innerString = 'Bar.decode=function decode(reader,length';
+      // Sanity check. protobufjs 7 emits a named `decode` function
+      // while 8 emits an anonymous one, and the argument list varies
+      // by version, so assert only on the stable prefix.
+      const innerString = 'Bar.decode=function';
       assert.include(contents, innerString);
 
       assert.notInclude(contents, 'encode');
