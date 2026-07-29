@@ -4,6 +4,10 @@ import prettier from 'eslint-config-prettier';
 import globals from 'globals';
 
 export default [
+  {
+    // Build output of the integration test.
+    ignores: ['test/integration/dist/'],
+  },
   js.configs.recommended,
   mocha.configs.recommended,
   prettier,
