@@ -71,10 +71,23 @@ locals {
   main_ruleset_name = "master"
   main_ruleset_id   = one([for ruleset in local.rulesets : ruleset.id if ruleset.name == local.main_ruleset_name])
 
-  # Get the node versions for the GH build job, so we can use them to
-  # specify required workflows.
+  # Derive the expected check names from the PR workflow's job
+  # matrices, so the required checks stay in sync with the workflow.
   pull_request_workflow = yamldecode(file("${path.module}/../workflows/pull_request.yml"))
-  build_node_versions   = local.pull_request_workflow.jobs.build.strategy.matrix["node-version"]
+  build_matrix          = local.pull_request_workflow.jobs.build.strategy.matrix
+  validate_matrix       = local.pull_request_workflow.jobs.validate.strategy.matrix
+
+  # GitHub names matrix jobs by joining the matrix values in
+  # definition order, flattening objects to their values, e.g. "build
+  # (18.x, ^7.0.0, ^1.0.0)".
+  build_contexts = [
+    for pair in setproduct(local.build_matrix["node-version"], local.build_matrix["protobufjs"]) :
+    "build (${pair[0]}, ${pair[1].pkg}, ${pair[1].cli})"
+  ]
+  validate_contexts = [
+    for protobufjs in local.validate_matrix["protobufjs"] :
+    "validate (${protobufjs.pkg}, ${protobufjs.cli})"
+  ]
 }
 
 resource "github_repository_ruleset" "master" {
@@ -125,14 +138,17 @@ resource "github_repository_ruleset" "master" {
       # Require status checks to pass with the latest code.
       strict_required_status_checks_policy = true
 
-      required_check {
-        context = "validate"
+      dynamic "required_check" {
+        for_each = local.validate_contexts
+        content {
+          context = required_check.value
+        }
       }
 
       dynamic "required_check" {
-        for_each = local.build_node_versions
+        for_each = local.build_contexts
         content {
-          context = "build (${required_check.value})"
+          context = required_check.value
         }
       }
     }
