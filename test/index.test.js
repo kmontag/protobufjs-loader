@@ -4,7 +4,7 @@ const os = require('os');
 const path = require('path');
 const UglifyJS = require('uglify-js');
 
-const glob = require('glob');
+const { glob } = require('glob');
 const compile = require('./helpers/compile');
 
 /**
@@ -49,22 +49,6 @@ const minify = (contents) => {
   }
   return result.code;
 };
-
-/**
- * Promisified glob function for convenience.
- *
- * @type { (globStr: string) => Promise<string[]> }
- */
-const globPromise = (globStr) =>
-  new Promise((resolve, reject) => {
-    glob(globStr, (err, files) => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve(files);
-      }
-    });
-  });
 
 /**
  * Promisified read-file-as-string function for convenience.
@@ -136,15 +120,13 @@ describe('protobufjs-loader', function () {
         this.tmpDir = tmpDir;
         this.cleanup = cleanup;
 
-        const files = await globPromise(
-          path.join(fixturesPath, '**', '*.proto')
-        );
+        const files = await glob(path.join(fixturesPath, '**', '*.proto'));
 
         await Promise.all(
           files.map((file) => {
             const targetPath = path.join(
               tmpDir,
-              path.relative(fixturesPath, file)
+              path.relative(fixturesPath, file),
             );
 
             return new Promise((resolve, reject) => {
@@ -164,10 +146,10 @@ describe('protobufjs-loader', function () {
                       }
                     });
                   }
-                }
+                },
               );
             });
-          })
+          }),
         );
         const target = path.resolve(__dirname, '..', 'node_modules');
         const link = path.join(tmpDir, 'node_modules');
@@ -194,7 +176,7 @@ describe('protobufjs-loader', function () {
 
       it('should not compile typescript by default', async function () {
         await compile(path.join(this.tmpDir, 'basic'));
-        const files = await globPromise(path.join(this.tmpDir, '*.d.ts'));
+        const files = await glob(path.join(this.tmpDir, '*.d.ts'));
         assert.equal(0, files.length);
       });
 
@@ -202,10 +184,10 @@ describe('protobufjs-loader', function () {
         await compile(path.join(this.tmpDir, 'basic'), { pbts: true });
         // By default, definitions should just be siblings of their
         // associated .proto file.
-        const files = await globPromise(path.join(this.tmpDir, '**', '*.d.ts'));
+        const files = await glob(path.join(this.tmpDir, '**', '*.d.ts'));
         const expectedDefinitionsFile = path.join(
           this.tmpDir,
-          'basic.proto.d.ts'
+          'basic.proto.d.ts',
         );
         assert.sameMembers([expectedDefinitionsFile], files);
 
@@ -222,11 +204,11 @@ describe('protobufjs-loader', function () {
           target: 'json-module',
           pbts: true,
         });
-        const files = await globPromise(path.join(this.tmpDir, '*.d.ts'));
+        const files = await glob(path.join(this.tmpDir, '*.d.ts'));
 
         const expectedDefinitionsFile = path.join(
           this.tmpDir,
-          'basic.proto.d.ts'
+          'basic.proto.d.ts',
         );
         assert.sameMembers([expectedDefinitionsFile], files);
 
@@ -235,7 +217,7 @@ describe('protobufjs-loader', function () {
         // Make sure the main protobufjs import shows up.
         assert.include(
           declarations,
-          'import * as $protobuf from "protobufjs";'
+          'import * as $protobuf from "protobufjs";',
         );
         // Some versions of protobufjs-cli will also include
         // additional imports. Make sure all non-empty lines are
@@ -253,10 +235,10 @@ describe('protobufjs-loader', function () {
             args: ['-n', 'testModuleName'],
           },
         });
-        const files = await globPromise(path.join(this.tmpDir, '*.d.ts'));
+        const files = await glob(path.join(this.tmpDir, '*.d.ts'));
         const expectedDeclarationFile = path.join(
           this.tmpDir,
-          'basic.proto.d.ts'
+          'basic.proto.d.ts',
         );
         assert.sameMembers([expectedDeclarationFile], files);
 
@@ -280,7 +262,7 @@ describe('protobufjs-loader', function () {
          */
         const assertSavesDeclarationToCustomLocation = async (
           tmpDir,
-          location
+          location,
         ) => {
           let outputInvocationCount = 0;
 
@@ -291,7 +273,7 @@ describe('protobufjs-loader', function () {
             outputInvocationCount += 1;
             assert.equal(
               fs.realpathSync(input),
-              fs.realpathSync(path.join(tmpDir, 'basic.proto'))
+              fs.realpathSync(path.join(tmpDir, 'basic.proto')),
             );
             return location;
           };
@@ -315,7 +297,7 @@ describe('protobufjs-loader', function () {
           const { dir: altTmpDir, cleanup } = makeTmpDir();
           const result = await assertSavesDeclarationToCustomLocation(
             this.tmpDir,
-            path.join(altTmpDir, 'alt.d.ts')
+            path.join(altTmpDir, 'alt.d.ts'),
           );
           assert.isTrue(result);
           cleanup();
@@ -329,7 +311,7 @@ describe('protobufjs-loader', function () {
               setTimeout(() => {
                 resolve(path.join(altTmpDir, 'alt.d.ts'));
               }, 5);
-            })
+            }),
           );
           assert.isTrue(result);
           cleanup();
@@ -342,12 +324,10 @@ describe('protobufjs-loader', function () {
             paths: [this.tmpDir],
             pbts: true,
           });
-          const files = await globPromise(
-            path.join(this.tmpDir, '**', '*.d.ts')
-          );
+          const files = await glob(path.join(this.tmpDir, '**', '*.d.ts'));
           const expectedDeclarationFile = path.join(
             this.tmpDir,
-            'import.proto.d.ts'
+            'import.proto.d.ts',
           );
           assert.sameMembers([expectedDeclarationFile], files);
 
@@ -415,7 +395,7 @@ describe('protobufjs-loader', function () {
           resolve: {
             modules: ['node_modules', path.resolve(__dirname, 'fixtures')],
           },
-        }
+        },
       );
       const contents = minify(inspect.arguments[0]);
       assert.include(contents, innerString);

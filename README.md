@@ -80,7 +80,7 @@ module.exports = {
                */
               output: (protobufFile) =>
                 `/custom/location/${require('path').basename(
-                  protobufFile
+                  protobufFile,
                 )}.d.ts`,
             },
 
