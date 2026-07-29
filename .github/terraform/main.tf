@@ -24,7 +24,9 @@ resource "github_repository" "default" {
 
   description = "Webpack loader to translate .proto definitions to ProtoBuf.js modules"
 
-  vulnerability_alerts = true
+  # We don't care much about vulnerabilities as they would just show
+  # up in CI/dev tooling.
+  vulnerability_alerts = false
 
   # Suggest updating PR branches.
   allow_update_branch = true
