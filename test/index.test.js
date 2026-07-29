@@ -466,4 +466,113 @@ describe('protobufjs-loader', function () {
       assert.isTrue(didError);
     });
   });
+
+  describe('with temporary directories', function () {
+    /**
+     * The loader creates its temporary directories directly under the
+     * OS temp directory, with a fixed prefix. Directories created by
+     * the tests themselves use a longer prefix of their own, and are
+     * excluded here.
+     *
+     * @type { () => string[] }
+     */
+    const loaderTmpDirs = () =>
+      fs
+        .readdirSync(os.tmpdir())
+        .filter(
+          (name) =>
+            name.startsWith('protobufjs-loader-') &&
+            !name.startsWith('protobufjs-loader-test-'),
+        );
+
+    beforeEach(function () {
+      this.existingTmpDirs = new Set(loaderTmpDirs());
+    });
+
+    // Every case in this block should leave the OS temp directory as
+    // it found it, whether the compilation succeeded or not.
+    afterEach(function () {
+      const leaked = loaderTmpDirs().filter(
+        (name) => !this.existingTmpDirs.has(name),
+      );
+      assert.deepEqual(leaked, [], 'loader temp directories were left behind');
+    });
+
+    // Sanity check for the rest of the block: without this, the
+    // assertions below would also pass if the loader never created a
+    // temp directory, or created it somewhere unexpected.
+    it('should create a temp directory while compiling', async function () {
+      /** @type { string[] } */
+      let duringCompilation = [];
+
+      const { dir, cleanup } = makeTmpDir();
+      try {
+        await compile('basic', {
+          pbts: {
+            // Invoked by the loader partway through its run, so this
+            // observes the temp directories which exist at that point.
+            output: () => {
+              duringCompilation = loaderTmpDirs().filter(
+                (name) => !this.existingTmpDirs.has(name),
+              );
+              return path.join(dir, 'basic.proto.d.ts');
+            },
+          },
+        });
+      } finally {
+        cleanup();
+      }
+
+      assert.isNotEmpty(
+        duringCompilation,
+        'expected the loader to create a temp directory while compiling',
+      );
+    });
+
+    it('should clean up after a successful compilation', async function () {
+      await compile('basic');
+    });
+
+    it('should clean up after a successful compilation with pbts', async function () {
+      const { dir, cleanup } = makeTmpDir();
+      try {
+        await compile('basic', {
+          pbts: { output: () => path.join(dir, 'basic.proto.d.ts') },
+        });
+      } finally {
+        cleanup();
+      }
+    });
+
+    it('should clean up when the protobuf file fails to compile', async function () {
+      let didError = false;
+      try {
+        await compile('import-failure', { target: 'json-module' });
+      } catch {
+        didError = true;
+      }
+      assert.isTrue(didError);
+    });
+
+    it('should clean up when pbts fails', async function () {
+      let didError = false;
+      try {
+        await compile('basic', {
+          pbts: {
+            // The loader doesn't create directories, so a declaration
+            // file in a nonexistent one fails to write.
+            output: () =>
+              path.join(
+                os.tmpdir(),
+                'protobufjs-loader-test-nonexistent',
+                'basic.proto.d.ts',
+              ),
+          },
+        });
+      } catch {
+        didError = true;
+      }
+      assert.isTrue(didError);
+    });
+  });
 });
