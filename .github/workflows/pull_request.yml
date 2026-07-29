@@ -29,6 +29,10 @@ jobs:
         run: npm install --no-save protobufjs@${{ matrix.protobufjs.pkg }} protobufjs-cli@${{ matrix.protobufjs.cli }}
       - run: npm run build --if-present
       - run: npm test
+        env:
+          # More detailed output in the integration tests, can also be
+          # eyeballed to make sure everything looks kosher.
+          PROTOBUFJS_LOADER_TEST_VERBOSE: '1'
 
   validate:
     runs-on: ubuntu-latest
