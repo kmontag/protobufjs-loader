@@ -19,6 +19,16 @@ without an explicit compile step in your build pipeline.
 npm install --save-dev protobufjs-loader
 ```
 
+`protobufjs-loader` has several peer dependencies; install whichever
+you don't already have. `webpack` and `protobufjs-cli` are used at
+build time, while `protobufjs` is required at runtime by the generated
+modules:
+
+```sh
+npm install --save-dev webpack protobufjs-cli
+npm install protobufjs
+```
+
 # Usage
 
 ```javascript
