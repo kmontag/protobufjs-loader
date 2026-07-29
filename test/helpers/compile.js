@@ -131,7 +131,7 @@ module.exports = async function compile(fixture, loaderOpts, webpackOpts) {
     throw new Error(
       `compilation has warnings: ${unexpectedWarnings
         .map((w) => w.message)
-        .join('; ')}`
+        .join('; ')}`,
     );
   }
 

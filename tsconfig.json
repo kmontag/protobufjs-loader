@@ -3,6 +3,7 @@
     "checkJs": true,
     "noEmit": true,
     "skipLibCheck": true,
-    "strict": true
+    "strict": true,
+    "types": ["mocha", "node"]
   }
 }
