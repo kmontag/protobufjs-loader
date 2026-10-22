@@ -24,10 +24,6 @@ resource "github_repository" "default" {
 
   description = "Webpack loader to translate .proto definitions to ProtoBuf.js modules"
 
-  # We don't care much about vulnerabilities as they would just show
-  # up in CI/dev tooling.
-  vulnerability_alerts = false
-
   # Suggest updating PR branches.
   allow_update_branch = true
 
@@ -42,16 +38,16 @@ resource "github_repository" "default" {
   # Clean up branches after merge.
   delete_branch_on_merge = true
 
-  has_downloads = true
-  has_issues    = true
-  has_projects  = false
-  has_wiki      = false
+  has_issues   = true
+  has_projects = false
+  has_wiki     = false
 }
 
-# Don't open automated PRs for vulnerable dependencies. These are almost always
-# lockfile-only bumps of transitive dependencies, and the lockfile isn't
-# published, so they don't affect consumers of the package.
-resource "github_repository_dependabot_security_updates" "default" {
+# Disable Dependabot alerts, which also disables the automated security update
+# PRs that come with them. These are almost always lockfile-only bumps of
+# transitive dependencies, and the lockfile isn't published, so they don't
+# affect consumers of the package.
+resource "github_repository_vulnerability_alerts" "default" {
   repository = github_repository.default.name
   enabled    = false
 }
