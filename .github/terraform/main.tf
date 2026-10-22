@@ -48,6 +48,14 @@ resource "github_repository" "default" {
   has_wiki      = false
 }
 
+# Don't open automated PRs for vulnerable dependencies. These are almost always
+# lockfile-only bumps of transitive dependencies, and the lockfile isn't
+# published, so they don't affect consumers of the package.
+resource "github_repository_dependabot_security_updates" "default" {
+  repository = github_repository.default.name
+  enabled    = false
+}
+
 data "github_rest_api" "rulesets" {
   endpoint = "/repos/${var.github_owner}/${github_repository.default.name}/rulesets"
 
