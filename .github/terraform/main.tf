@@ -24,10 +24,6 @@ resource "github_repository" "default" {
 
   description = "Webpack loader to translate .proto definitions to ProtoBuf.js modules"
 
-  # We don't care much about vulnerabilities as they would just show
-  # up in CI/dev tooling.
-  vulnerability_alerts = false
-
   # Suggest updating PR branches.
   allow_update_branch = true
 
@@ -42,14 +38,25 @@ resource "github_repository" "default" {
   # Clean up branches after merge.
   delete_branch_on_merge = true
 
-  has_downloads = true
-  has_issues    = true
-  has_projects  = false
-  has_wiki      = false
+  has_issues   = true
+  has_projects = false
+  has_wiki     = false
+}
+
+# Disable Dependabot alerts, which also disables the automated security update
+# PRs that come with them. These are almost always lockfile-only bumps of
+# transitive dependencies, and the lockfile isn't published, so they don't
+# affect consumers of the package.
+resource "github_repository_vulnerability_alerts" "default" {
+  repository = github_repository.default.name
+  enabled    = false
 }
 
 data "github_rest_api" "rulesets" {
-  endpoint = "/repos/${var.github_owner}/${github_repository.default.name}/rulesets"
+  # Use the variable rather than the resource's name, so the read isn't
+  # deferred to apply time (which would make the ruleset import ID unknown at
+  # plan time) when the repository has pending changes.
+  endpoint = "/repos/${var.github_owner}/${var.github_repository_name}/rulesets"
 
   lifecycle {
     postcondition {
@@ -166,5 +173,5 @@ import {
 
 import {
   to = github_repository_ruleset.master
-  id = "${github_repository.default.name}:${local.main_ruleset_id}"
+  id = "${var.github_repository_name}:${local.main_ruleset_id}"
 }
