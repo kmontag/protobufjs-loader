@@ -57,7 +57,10 @@ resource "github_repository_dependabot_security_updates" "default" {
 }
 
 data "github_rest_api" "rulesets" {
-  endpoint = "/repos/${var.github_owner}/${github_repository.default.name}/rulesets"
+  # Use the variable rather than the resource's name, so the read isn't
+  # deferred to apply time (which would make the ruleset import ID unknown at
+  # plan time) when the repository has pending changes.
+  endpoint = "/repos/${var.github_owner}/${var.github_repository_name}/rulesets"
 
   lifecycle {
     postcondition {
@@ -174,5 +177,5 @@ import {
 
 import {
   to = github_repository_ruleset.master
-  id = "${github_repository.default.name}:${local.main_ruleset_id}"
+  id = "${var.github_repository_name}:${local.main_ruleset_id}"
 }
